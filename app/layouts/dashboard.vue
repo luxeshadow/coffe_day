@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard-container">
     <!-- Sidebar -->
-    <aside id="sidebar" :class="{ 'sidebar-open': isSidebarOpen }">
+    <aside id="sidebar" :class="sidebarClasses">
       <div class="sidebar-header flex items-center justify-between">
         <div class="flex items-center space-x-3">
           <img
@@ -29,50 +29,37 @@
           <li>
             <button class="flex items-center justify-between w-full" @click="toggleDropdown('gestion')">
               <span><i class="fi fi-rr-function-process"></i> Gestion Ressources</span>
-              <i
-                :class="[
-                  'fas',
-                  openDropdown === 'gestion' ? 'fa-chevron-up' : 'fa-chevron-down',
-                  'text-sm'
-                ]"
-              ></i>
+              <i :class="gestionDropdownClasses"></i>
             </button>
-            <ul :class="{ submenu: true, active: openDropdown === 'gestion' }">
-
-             <li>
+            <ul :class="gestionSubmenuClasses">
+              <li>
                 <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile">
-                  <i class="fas fa-plus mr-3 text-sm"></i>
-                  Gestion des Utilisateur
-                </NuxtLink>
-              </li>
-               <li>
-                <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile">
-                  <i class="fas fa-plus mr-3 text-sm"></i>
-                  Gestion des Retrais
+                  <i class="fas fa-plus mr-3 text-sm"></i> Gestion des Utilisateur
                 </NuxtLink>
               </li>
               <li>
                 <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile">
-                  <i class="fas fa-plus mr-3 text-sm"></i>
-                  Gestion Rôles
+                  <i class="fas fa-plus mr-3 text-sm"></i> Gestion des Retrais
                 </NuxtLink>
               </li>
               <li>
                 <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile">
-                  <i class="fas fa-plus mr-3 text-sm"></i>
-                  Gestion des Grade
+                  <i class="fas fa-plus mr-3 text-sm"></i> Gestion Rôles
                 </NuxtLink>
               </li>
               <li>
                 <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile">
-                  <i class="fas fa-plus mr-3 text-sm"></i>
-                  Gestion des Avatar
+                  <i class="fas fa-plus mr-3 text-sm"></i> Gestion des Grade
                 </NuxtLink>
               </li>
               <li>
                 <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile">
-                  <i class="fas fa-plus mr-3 text-sm"></i>
-                  Gestion des Notification
+                  <i class="fas fa-plus mr-3 text-sm"></i> Gestion des Avatar
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile">
+                  <i class="fas fa-plus mr-3 text-sm"></i> Gestion des Notification
                 </NuxtLink>
               </li>
             </ul>
@@ -84,7 +71,6 @@
               Assets
             </NuxtLink>
           </li>
-
         </ul>
       </div>
     </aside>
@@ -93,15 +79,13 @@
     <div v-if="isSidebarOpen" class="backdrop" @click="closeSidebar"></div>
 
     <!-- Main content -->
-    <div class="main-content" id="main-content" :class="{ 'sidebar-open': isSidebarOpen }">
+    <div class="main-content" id="main-content" :class="sidebarClasses">
       <!-- Navbar -->
       <header>
         <div class="header-container">
           <div class="header-inner">
             <div class="flex items-center space-x-3">
-              <button class="menu-toggle" @click="toggleSidebar">
-                <!-- <img src="/images/other/menu.png" alt="menu" class="menu-icon" /> -->
-              </button>
+              <button class="menu-toggle" @click="toggleSidebar"></button>
             </div>
             <span class="mone">{{ pageTitle }}</span>
             <div class="header-actions">
@@ -138,42 +122,47 @@
   </div>
 </template>
 
-
-
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 // Sidebar & dropdown
 const isSidebarOpen = ref(false)
 const openDropdown = ref(null)
-
 const pageTitle = 'Tableau de Bord'
 
 const toggleSidebar = () => { isSidebarOpen.value = !isSidebarOpen.value }
 const closeSidebar = () => { isSidebarOpen.value = false }
 const closeSidebarOnMobile = () => { if (window.innerWidth < 768) closeSidebar() }
-
 const toggleDropdown = (dropdown) => {
   openDropdown.value = openDropdown.value === dropdown ? null : dropdown
 }
-
 const logout = () => {
   console.log('Déconnexion')
   openDropdown.value = null
 }
 
-// Fermer dropdown si clic à l'extérieur
-onMounted(() => {
-  const handleClickOutside = (event) => {
-    if (!event.target.closest('.dropdown-trigger') && !event.target.closest('.profile-trigger')) {
-      openDropdown.value = null
-    }
-  }
-  document.addEventListener('click', handleClickOutside)
-  onUnmounted(() => document.removeEventListener('click', handleClickOutside))
-})
-</script>
+// Classes dynamiques via computed
+const sidebarClasses = computed(() => ({ 'sidebar-open': isSidebarOpen.value }))
+const gestionSubmenuClasses = computed(() => ({
+  submenu: true,
+  active: openDropdown.value === 'gestion'
+}))
+const gestionDropdownClasses = computed(() => [
+  'fas',
+  openDropdown.value === 'gestion' ? 'fa-chevron-up' : 'fa-chevron-down',
+  'text-sm'
+])
 
+// Fermer dropdown si clic à l'extérieur
+const handleClickOutside = (event) => {
+  if (!event.target.closest('.dropdown-trigger') && !event.target.closest('.profile-trigger')) {
+    openDropdown.value = null
+  }
+}
+
+onMounted(() => document.addEventListener('click', handleClickOutside))
+onUnmounted(() => document.removeEventListener('click', handleClickOutside))
+</script>
 
 
 <style>
