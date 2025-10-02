@@ -9,6 +9,10 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
   ],
 
+  nitro: {
+    preset: 'netlify'
+  },
+
   runtimeConfig: {
     public: {
       supabaseUrl: 'https://hubxvgpqhurrzqonulap.supabase.co', 
