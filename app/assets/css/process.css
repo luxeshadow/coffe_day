@@ -1,0 +1,82 @@
+/* Process section */
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 25px 0 15px;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 20px;
+    
+}
+
+.process-scroll {
+    display: flex;
+    overflow-x: auto;
+    gap: 15px;
+    padding: 5px 5px 20px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    margin: 20px;
+}
+@media (max-width: 576px) {
+ .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 25px 0 15px;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 5px;
+}
+
+.process-scroll {
+    display: flex;
+    overflow-x: auto;
+    gap: 15px;
+    padding: 5px 5px 20px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    margin: 5px;
+}
+}
+
+.process-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.process-card {
+    flex: 0 0 auto;
+    width: 200px;
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.process-icon {
+    font-size: 32px;
+    color: var(--secondary);
+    margin-bottom: 15px;
+    background: rgba(107, 78, 49, 0.1);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.process-name {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--primary);
+}
+
+.process-desc {
+    font-size: 13px;
+    color: #666;
+}

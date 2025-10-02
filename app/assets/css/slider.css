@@ -1,0 +1,262 @@
+.hero-carousel {
+  position: relative;
+  margin: 20px;
+}
+
+.hero-card {
+  background: linear-gradient(135deg, var(--secondary), var(--primary));
+  border-radius: 20px;
+  padding: 30px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: transform 0.5s ease;
+  display: none;
+}
+
+.hero-card.active {
+  display: flex;
+}
+
+.hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 180px;
+  height: 180px;
+  background: url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=200&q=80') no-repeat center/cover;
+  opacity: 0.2;
+  border-radius: 0 20px 0 100px;
+  transition: all 0.5s ease;
+}
+
+.hero-content {
+  max-width: 65%;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 15px;
+  position: relative;
+  z-index: 1;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.hero-desc {
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 25px;
+  position: relative;
+  z-index: 1;
+  line-height: 1.5;
+}
+
+.hero-button {
+  background: var(--cream);
+  color: var(--primary);
+  border: none;
+  padding: 14px 30px;
+  border-radius: 50px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.hero-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 100%;
+  background: var(--accent);
+  transition: all 0.3s ease;
+  z-index: -1;
+  border-radius: 50px;
+}
+
+.hero-button:hover {
+  transform: translateY(-3px);
+  color: var(--cream);
+}
+
+.hero-button:hover::before {
+  width: 100%;
+}
+
+.hero-button i {
+  transition: transform 0.3s ease;
+}
+
+.hero-button:hover i {
+  transform: translateX(5px);
+}
+
+.carousel-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.carousel-indicator {
+  width: 40px;
+  height: 6px;
+  background: #ccc;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.carousel-indicator:hover {
+  background: var(--secondary);
+}
+
+.carousel-indicator.active {
+  background: var(--accent);
+  width: 50px;
+}
+
+.carousel-control {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.8);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.carousel-control:hover {
+  background: var(--cream);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-control.prev {
+  left: 15px;
+}
+
+.carousel-control.next {
+  right: 15px;
+}
+
+.carousel-control i {
+  font-size: 20px;
+  color: var(--primary);
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .hero-content {
+    max-width: 75%;
+  }
+  
+  .hero-title {
+    font-size: 24px;
+  }
+  
+  .hero-card::before {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-card {
+    padding: 25px;
+    min-height: 250px;
+  }
+  
+  .hero-content {
+    max-width: 100%;
+    text-align: center;
+  }
+  
+  .hero-title {
+    font-size: 22px;
+  }
+  
+  .hero-desc {
+    font-size: 15px;
+  }
+  
+  .hero-card::before {
+    opacity: 0.15;
+    width: 120px;
+    height: 120px;
+  }
+  
+  .carousel-control {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-carousel {
+    position: relative;
+    margin: 15px 5px;
+  }
+  
+  .hero-card {
+    padding: 15px;       /* réduit le padding */
+    min-height: 160px;   /* hauteur plus petite */
+    border-radius: 15px;
+  }
+  
+  .hero-title {
+    font-size: 18px;     /* texte légèrement plus petit */
+    margin-bottom: 8px;
+  }
+  
+  .hero-desc {
+    font-size: 13px;     /* texte légèrement plus petit */
+    margin-bottom: 15px;
+  }
+  
+  .hero-button {
+    padding: 10px 20px;  /* réduit le bouton */
+    font-size: 13px;
+  }
+  
+  .hero-card::before {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .carousel-control {
+    width: 30px;
+    height: 30px;
+    top: 40%;
+  }
+  
+  .carousel-control i {
+    font-size: 14px;
+  }
+  
+  .carousel-indicators {
+    margin-top: 12px;
+  }
+}

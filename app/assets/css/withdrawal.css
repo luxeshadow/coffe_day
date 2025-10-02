@@ -1,0 +1,64 @@
+.withdrawal-container {
+  background: var(--primary);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 20px;
+   margin: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+@media (max-width: 576px) {
+   .withdrawal-container {
+  background: var(--primary);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 20px;
+   margin: 5px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+}
+
+.withdrawal-title {
+  color: white;
+  font-size: 14px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* wrapper pour masquer le surplus */
+.marquee-wrapper {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.marquee-content {
+  display: flex;
+  gap: 30px;
+  animation: marquee 20s linear infinite;
+}
+
+.withdrawal-item {
+  display: inline-flex;
+  align-items: center;
+  color: white;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.withdrawal-item i {
+  color: var(--success);
+  margin-right: 6px;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}

@@ -1,0 +1,75 @@
+
+:root {
+--primary: #3b2f2f;
+--secondary: #6b4e31;
+--accent: #d4af37;
+--light: #f8f5f0;
+--dark: #2c2c2c;
+--text: #333333;
+--coffee: #8a6d6d;
+--cream: #fff9f0;
+--card-bg: #ffffff;
+--success: #4CAF50;
+--header-height: 70px;
+--nav-height: 80px;
+--shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.header {
+background: linear-gradient(135deg, var(--secondary), var(--primary));
+color: white;
+padding: 25px 20px;
+text-align: center;
+position: relative;
+overflow: hidden;
+}
+
+.header::before {
+content: '';
+position: absolute;
+top: -20px;
+right: -20px;
+width: 100px;
+height: 100px;
+background: rgba(255, 255, 255, 0.1);
+border-radius: 50%;
+}
+
+.header h1 {
+font-size: 28px;
+font-weight: 600;
+margin: 0;
+position: relative;
+z-index: 1;
+}
+
+/* Section d'information */
+.info-section {
+background-color: white;
+padding: 20px;
+margin: 20px;
+border-radius: 16px;
+box-shadow: var(--shadow);
+display: flex;
+align-items: flex-start;
+gap: 15px;
+}
+
+.info-icon {
+width: 32px;
+height: 32px;
+background-color: var(--accent);
+border-radius: 50%;
+color: white;
+display: flex;
+align-items: center;
+justify-content: center;
+font-weight: bold;
+font-size: 16px;
+flex-shrink: 0;
+}
+
+.info-text {
+font-size: 15px;
+color: var(--text);
+line-height: 1.6;
+}
