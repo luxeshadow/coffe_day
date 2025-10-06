@@ -7,6 +7,7 @@ export default defineNuxtConfig({
     '@nuxt/icon',
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
+    '@vite-pwa/nuxt'
   ],
 
   nitro: {
@@ -15,12 +16,10 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      supabaseUrl: 'https://hubxvgpqhurrzqonulap.supabase.co', 
-      supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Ynh2Z3BxaHVycnpxb251bGFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2NDUyNDgsImV4cCI6MjA3NDIyMTI0OH0.qZYF377Buq15svHZw909RgNfG7b4CMXw0HJwYViBTzo',
-
-      // PayGate API Key
-      paygateKey: '7200ed15-c944-4c1c-a025-2379213ac043',
-    },
+      SUPABASE_URL: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
+      SUPABASE_KEY: process.env.NUXT_PUBLIC_SUPABASE_KEY || '',
+      PAYGATE_KEY: process.env.NUXT_PUBLIC_PAYGATE_KEY || ''
+    }
   },
 
   app: {
@@ -33,8 +32,58 @@ export default defineNuxtConfig({
         {
           rel: 'stylesheet',
           href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css'
+        },
+        {
+          rel: 'manifest',
+          href: '/manifest.webmanifest'
+        }
+      ],
+      meta: [
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+      ]
+    }
+  },
+
+  pwa: {
+    registerType: 'autoUpdate',
+    strategies: 'generateSW',
+    workbox: {
+      cleanupOutdatedCaches: true,
+      globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg}'],
+      navigateFallback: '/',
+      navigateFallbackDenylist: [
+        /^\/api\//,                // exclut les API
+        /^\/manifest\.webmanifest$/ // exclut le manifest
+      ],
+    },
+    manifest: {
+      name: 'EcoNest',
+      short_name: 'EcoNest',
+      description: 'Application de gestion EcoNest',
+      start_url: '/',
+      display: 'standalone',
+      orientation: 'portrait',
+      background_color: '#ffffff',
+      theme_color: '#00A86B',
+      icons: [
+        {
+          src: '/img/coffee/512x512.jpeg',
+          sizes: '512x512',
+          type: 'image/jpeg',
+          purpose: 'any maskable'
+        },
+        {
+          src: '/img/coffee/192x192.jpeg',
+          sizes: '192x192',
+          type: 'image/jpeg'
         }
       ]
+    },
+    devOptions: {
+      enabled: true,
+      type: 'module'
     }
   }
 })

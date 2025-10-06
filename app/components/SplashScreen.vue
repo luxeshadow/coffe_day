@@ -3,15 +3,20 @@
     <!-- Texte animé -->
     <div class="logo-text">
       <div 
-        v-for="(letter, index) in letters" 
-        :key="index" 
-        class="letter"
-        :class="{ space: letter === '' }"
-        :style="{ animationDelay: `${index * 0.1}s` }"
-      >
-        {{ letter }}
-      </div>
+  v-for="(letter, index) in letters" 
+  :key="index" 
+  class="letter"
+  :class="{ space: letter === '' }"
+  :style="{ 
+    animationDelay: `${index * 0.1}s`,
+    color: index <= 2 ? '#4CAF50' : '#f8f5f0' 
+  }"
+>
+  {{ letter }}
+</div>
+
     </div>
+    
 
     <!-- Logo -->
     <div class="logo">
@@ -31,7 +36,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-const letters = ref(['E','C','O','','B','O','O','S','T'])
+const letters = ref(['E','C','O','N','E','S','T'])
 const progressWidth = ref('0%')
 
 onMounted(() => {

@@ -37,9 +37,9 @@
           </div>
         </div>
 
-        <button type="submit" :disabled="loading">
-          <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
-          {{ loading ? 'Logging in...' : 'Log in' }}
+        <button type="submit" :disabled="loading || loadingStores">
+          <i v-if="loading || loadingStores" class="fas fa-spinner fa-spin mr-2"></i>
+          {{ loading || loadingStores ? 'Logging in...' : 'Log in' }}
         </button>
       </form>
 
@@ -47,26 +47,36 @@
         Don't have an account? <NuxtLink to="/register">Sign up</NuxtLink>.
       </p>
     </div>
+
+    <!-- Overlay de chargement des stores -->
+    <div v-if="loadingStores" class="loading-overlay">
+      <div class="spinner"></div>
+      <p>Chargement de vos données...</p>
+    </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
-import { useLoginUser } from '../composables/useLoginUser' 
+import { useLoginUser } from '../composables/useLoginUser'
+import { useGainStore } from '../stores/gainStore'
+import { useGradeStore } from '../stores/gradeStore'
+import { useRouter } from 'vue-router'
 
 const form = ref({
-  phone: '', 
+  phone: '',
   password: ''
 })
-
 const showPassword = ref(false)
-const { loginUser, loading, error } = useLoginUser() 
+
+const { loginUser, loading } = useLoginUser()
+const gainStore = useGainStore()
+const gradeStore = useGradeStore()
+const router = useRouter()
+
+const loadingStores = ref(false)
 
 const handleLogin = async () => {
-  if (!form.value.phone || !form.value.password) {
-    alert('Please fill in all fields.')
-    return
-  }
 
   try {
     const payload = {
@@ -76,7 +86,23 @@ const handleLogin = async () => {
 
     const user = await loginUser(payload)
     if (user) {
-      console.log('Utilisateur connecté :', user)
+      console.log('✅ Utilisateur connecté :', user)
+
+      // 🔥 Charger toutes les données liées aux gains et grades
+      loadingStores.value = true
+      try {
+        await Promise.all([
+          gainStore.fetchUserGains(),
+          gradeStore.fetchGrades(),
+          gradeStore.fetchUserGrades(),
+          gradeStore.fetchUserDailyIncome()
+        ])
+      } catch (err) {
+        console.error('Erreur lors du chargement des données utilisateur:', err)
+      } finally {
+        loadingStores.value = false
+      }
+      router.push('/home')
     }
   } catch (err) {
     console.error('Erreur login:', err)

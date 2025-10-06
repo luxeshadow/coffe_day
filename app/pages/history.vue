@@ -1,44 +1,30 @@
 <template>
-    <Header/>
+  <Header />
+
   <div class="history-container">
     <div class="history-header">
-     
       <div class="filter-options">
-        <button 
-          class="filter-btn" 
-          :class="{ active: activeFilter === 'all' }"
-          @click="setFilter('all')"
-        >
-          Tous
-        </button>
-        <button 
-          class="filter-btn" 
-          :class="{ active: activeFilter === '30d' }"
-          @click="setFilter('30d')"
-        >
-          30j
-        </button>
-        <button 
-          class="filter-btn" 
-          :class="{ active: activeFilter === '7d' }"
-          @click="setFilter('7d')"
-        >
-          7j
-        </button>
+        <button class="filter-btn" :class="{ active: activeFilter === 'all' }" @click="setFilter('all')">Tous</button>
+        <button class="filter-btn" :class="{ active: activeFilter === 'recharge' }" @click="setFilter('recharge')">Recharges</button>
+        <button class="filter-btn" :class="{ active: activeFilter === 'retrait' }" @click="setFilter('retrait')">Retraits</button>
       </div>
     </div>
 
-    <ul class="history-list" v-if="filteredOperations.length > 0">
-      <li 
-        class="history-item" 
-        :class="op.type.toLowerCase()" 
-        v-for="(op, index) in filteredOperations" 
-        :key="index"
-      >
+    <ul class="history-list" v-if="!loading && filteredOperations.length">
+      <li class="history-item" :class="op.type.toLowerCase()" v-for="(op, index) in filteredOperations" :key="index">
         <div class="history-content">
           <span class="history-type" :class="op.type.toLowerCase()">{{ op.type }}</span>
           <span class="history-info">{{ op.info }}</span>
           <span class="history-date">{{ op.date }}</span>
+      <span
+  style="margin-left: 5px;"
+  v-if="op.status"
+  class="history-status"
+  :class="op.status"
+>
+  {{ op.status }}
+</span>
+
         </div>
         <span class="history-amount" :class="op.amount > 0 ? 'positive' : 'negative'">
           {{ op.amount > 0 ? '+' : '' }}{{ formatAmount(op.amount) }} XOF
@@ -46,65 +32,41 @@
       </li>
     </ul>
 
-    <div v-else class="history-empty">
+    <div v-if="loading" class="history-loading">
+      <i class="fas fa-spinner fa-spin"></i> Chargement de l'historique...
+    </div>
+
+    <div v-else-if="!filteredOperations.length" class="history-empty">
       <i class="fas fa-receipt"></i>
       <p>Aucune opération pour le moment.</p>
       <small>Vos transactions apparaîtront ici</small>
     </div>
 
-    <NuxtLink to="/profile" class="history-back">
-      <i class="fas fa-arrow-left"></i> Retour au profil
-    </NuxtLink>
+    <div v-if="error" class="history-error">{{ error }}</div>
+
   </div>
+  
 </template>
 
-<script setup>
-import { ref, computed } from 'vue';
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useListeHistory } from '../composables/useListeHistory'
 
-const activeFilter = ref('all');
+const activeFilter = ref('all')
+const { fetchHistory, allOperations, loading, error } = useListeHistory()
 
-const operations = ref([
-  {
-    type: "Recharge",
-    info: "Via Mobile Money",
-    date: "25 août 2025, 10:15",
-    amount: 10000
-  },
-  {
-    type: "Investissement",
-    info: "Acheté Boite collecte 2",
-    date: "24 août 2025, 17:42",
-    amount: -20000
-  },
-  {
-    type: "Retrait",
-    info: "Vers 228****4545",
-    date: "23 août 2025, 09:30",
-    amount: -5000
-  },
-  {
-    type: "Gain",
-    info: "Crédités (jour 1)",
-    date: "23 août 2025, 23:59",
-    amount: 600
-  }
-]);
-
-const setFilter = (filter) => {
-  activeFilter.value = filter;
-  // Ici vous pourriez ajouter une logique de filtrage plus avancée
-};
+onMounted(() => fetchHistory())
 
 const filteredOperations = computed(() => {
-  // Pour l'exemple, nous retournons toutes les opérations
-  // Dans une vraie application, vous filtreriez selon activeFilter.value
-  return operations.value;
-});
+  if (activeFilter.value === 'recharge') return allOperations.value.filter(op => op.type.toLowerCase() === 'recharge')
+  if (activeFilter.value === 'retrait') return allOperations.value.filter(op => op.type.toLowerCase() === 'retrait')
+  return allOperations.value
+})
 
-const formatAmount = (amount) => {
-  return new Intl.NumberFormat('fr-FR').format(Math.abs(amount));
-};
+const setFilter = (filter: string) => activeFilter.value = filter
+const formatAmount = (amount: number) => new Intl.NumberFormat('fr-FR').format(Math.abs(amount))
 </script>
+
 
 <style scoped>
 .history-container {
@@ -114,6 +76,9 @@ const formatAmount = (amount) => {
   padding: 25px;
   margin: 20px auto;
   max-width: 700px;
+}
+.history-status{
+  text-transform: capitalize;
 }
 
 .history-header {

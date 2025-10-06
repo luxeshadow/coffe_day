@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import gainApi from '../api/gainApi'
 
 interface UserGain {
@@ -10,13 +10,19 @@ interface UserGain {
 }
 
 export const useGainStore = defineStore('gain', () => {
-  const totalRecharges = ref(0)
-  const totalWithdrawals = ref(0)
-  const totalGradeGains = ref(0)
-  const walletBalance = ref(0)
+  const totalRecharges = ref<number>(parseFloat(localStorage.getItem('totalRecharges') || '0'))
+  const totalWithdrawals = ref<number>(parseFloat(localStorage.getItem('totalWithdrawals') || '0'))
+  const totalGradeGains = ref<number>(parseFloat(localStorage.getItem('totalGradeGains') || '0'))
+  const walletBalance = ref<number>(parseFloat(localStorage.getItem('walletBalance') || '0'))
 
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  // Synchronisation avec localStorage
+  watch(totalRecharges, val => localStorage.setItem('totalRecharges', val.toString()))
+  watch(totalWithdrawals, val => localStorage.setItem('totalWithdrawals', val.toString()))
+  watch(totalGradeGains, val => localStorage.setItem('totalGradeGains', val.toString()))
+  watch(walletBalance, val => localStorage.setItem('walletBalance', val.toString()))
 
   // Action pour récupérer les gains de l'utilisateur
   const fetchUserGains = async () => {
@@ -33,14 +39,17 @@ export const useGainStore = defineStore('gain', () => {
     } finally {
       loading.value = false
     }
-    console.log('GainStore state:', {
-      totalRecharges: totalRecharges.value,
-      totalWithdrawals: totalWithdrawals.value,
-      totalGradeGains: totalGradeGains.value,
-      walletBalance: walletBalance.value,
-      loading: loading.value,
-      error: error.value
-    })
+  }
+
+  const clearStore = () => {
+    totalRecharges.value = 0
+    totalWithdrawals.value = 0
+    totalGradeGains.value = 0
+    walletBalance.value = 0
+    localStorage.removeItem('totalRecharges')
+    localStorage.removeItem('totalWithdrawals')
+    localStorage.removeItem('totalGradeGains')
+    localStorage.removeItem('walletBalance')
   }
 
   return {
@@ -50,6 +59,7 @@ export const useGainStore = defineStore('gain', () => {
     walletBalance,
     loading,
     error,
-    fetchUserGains
+    fetchUserGains,
+    clearStore
   }
 })

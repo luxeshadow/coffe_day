@@ -10,13 +10,12 @@ const authApi = {
     const phoneWithoutCode = user.phone.replace(/^\+\d{1,3}/, '')
     const email = phoneWithoutCode + '@dummy.com'
 
+    // Création de l'utilisateur dans Supabase Auth
     const { data: authData, error: authError } = await $supabase.auth.signUp({
       email,
       password: user.password,
       options: {
         data: {
-          last_name: user.last_name,
-          first_name: user.first_name,
           phone: user.phone,
           parent_invitecode: user.parent_invitecode
         }
@@ -24,13 +23,13 @@ const authApi = {
     })
 
     if (authError) throw authError
+    if (!authData.user) throw new Error('Utilisateur non créé dans Supabase Auth')
 
-    // Insertion des informations dans la table "users"
+    // Insertion dans la table "users"
     const { error: insertError } = await $supabase
       .from('users')
       .insert([{
-        last_name: user.last_name,
-        first_name: user.first_name,
+        auth_id: authData.user.id,
         user_name: user.user_name,
         phone: user.phone,
         parent_invitecode: user.parent_invitecode
@@ -38,7 +37,6 @@ const authApi = {
 
     if (insertError) throw insertError
 
-    // Retourne les données d'authentification (JWT, user, etc.)
     return authData
   },
 
@@ -48,17 +46,41 @@ const authApi = {
 
     const phoneWithoutCode = phone.replace(/^\+\d{1,3}/, '')
     const email = phoneWithoutCode + '@dummy.com'
+
+    // 1️⃣ Connexion Supabase Auth
     const { data, error } = await $supabase.auth.signInWithPassword({
       email,
       password
     })
+    if (error) throw new Error(error.message)
+    if (!data.user) throw new Error('Utilisateur non trouvé.')
 
-    if (error) {
-     
-      throw new Error(error.message)
+    // 2️⃣ Récupération du rôle depuis "users" + jointure "roles"
+    const { data: userData, error: userError } = await $supabase
+      .from('users')
+      .select(`
+        id,
+        user_name,
+        phone,
+        auth_id,
+        id_role,
+        roles (role_name)
+      `)
+      .eq('auth_id', data.user.id)
+      .single()
+
+    if (userError || !userData) throw new Error("Impossible de récupérer les informations utilisateur.")
+
+    // 3️⃣ Retourne les infos essentielles
+    return {
+      session: data.session,
+      user: {
+        auth_id: userData.auth_id,
+        user_name: userData.user_name,
+        phone: userData.phone,
+        role: userData.roles?.role_name || 'user'
+      }
     }
-
-    return data
   },
 
   // -------------------- LOGOUT --------------------

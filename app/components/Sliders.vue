@@ -10,10 +10,10 @@
       <div class="hero-content">
         <h2 class="hero-title">{{ card.title }}</h2>
         <p class="hero-desc">{{ card.description }}</p>
-        <button class="hero-button">
-          {{ card.buttonText }}
-          <Icon name="heroicons:arrow-right-solid" style="width:16px; height:16px; margin-left:5px;" />
-        </button>
+       <button class="hero-button" @click="goProfile">
+  {{ card.buttonText }}
+  <Icon name="heroicons:arrow-right-solid" style="width:16px; height:16px; margin-left:5px;" />
+</button>
       </div>
     </div>
 
@@ -40,7 +40,10 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import '~/assets/css/slider.css'
+
+const router = useRouter()
 
 const currentIndex = ref(0)
 const cards = ref([
@@ -65,10 +68,13 @@ const setCurrentIndex = (index) => currentIndex.value = index
 const nextCard = () => currentIndex.value = (currentIndex.value + 1) % cards.value.length
 const prevCard = () => currentIndex.value = (currentIndex.value - 1 + cards.value.length) % cards.value.length
 
+// Auto-scroll
 let autoScrollInterval
 onMounted(() => {
   autoScrollInterval = setInterval(nextCard, 5000)
 })
 onBeforeUnmount(() => clearInterval(autoScrollInterval))
-</script>
 
+// Navigation bouton
+const goProfile = () => router.push('/profile')
+</script>

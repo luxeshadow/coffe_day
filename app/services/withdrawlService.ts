@@ -1,5 +1,5 @@
 // services/withdrawlService.ts
-import withdrawlApi from '../api/withdrawlApi.ts' 
+import withdrawlApi from '../api/withdrawlApi' 
 interface WithdrawlFormData {
   montant: number
   password: string

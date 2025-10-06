@@ -22,12 +22,13 @@ export const paygateService = {
   // Créer un paiement
   async createPayment(payload: PaygatePayload): Promise<PaygateResponse> {
     const config = useRuntimeConfig()
+    const authToken = config.public.PAYGATE_KEY
 
     const response = await fetch('https://paygateglobal.com/api/v1/pay', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        auth_token: config.public.paygateKey,
+        auth_token: authToken,
         ...payload,
         network: payload.network.toUpperCase(),
       }),
@@ -40,11 +41,13 @@ export const paygateService = {
   // Vérifier le statut d'un paiement
   async checkPaymentStatus(tx_reference: string): Promise<PaygateResponse> {
     const config = useRuntimeConfig()
+    const authToken = config.public.PAYGATE_KEY
+
     const response = await fetch('https://paygateglobal.com/api/v1/status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        auth_token: config.public.paygateKey,
+        auth_token: authToken,
         tx_reference,
       }),
     })

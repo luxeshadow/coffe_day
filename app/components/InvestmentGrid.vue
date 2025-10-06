@@ -18,7 +18,7 @@
         <img :src="grade.img ?? '/img/coffee/boite2.png'" :alt="grade.grade_name" />
       </div>
       <div class="card-content">
-        <div class="invest-title">{{ grade.grade_name }}</div>
+        <div class="invest-title">Boite {{ grade.grade_name }}</div>
         <div class="invest-details">
           <div class="invest-amount">
             <span class="invest-label">Investissement:</span>
@@ -35,53 +35,61 @@
           v-if="!gradeStore.isGradeActivated(grade.id)"
           to="#"
           class="debut-button"
-          @click.prevent="handleStartGrade(grade)"
+          @click.prevent="confirmActivateGrade(grade)"
         >
           <i v-if="loadingGradesMap.has(grade.id)" class="fas fa-spinner fa-spin mr-2"></i>
-          <i v-else style="margin-top:5px;" class="fi fi-rr-play-circle"></i>
-          Débuter
+          <i style="margin-top:4px" v-else class="fi fi-rr-play-circle"></i>
+          Activé
         </NuxtLink>
 
-        <div v-else class="debut-button deja-actif">
-          <i class="fi fi-rr-pause"></i>
-          Déjà activé
+        <div v-else class="activated-badge">
+          <i style="margin-top:2px" class="fi fi-rr-badget-check-alt"></i>
+          Actif...
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Loader global -->
-  <div style="text-align: center;" v-if="gradeStore.loading">
-    <i class="fas fa-spinner fa-spin mr-2"></i>
+  <!-- Modal de confirmation -->
+  <div v-if="modalGrade" class="modal-overlay">
+    <div class="modal-content">
+      <h3>Confirmer l'activation</h3>
+      <p>Voulez-vous vraiment activer la boite <strong>{{ modalGrade.grade_name }}</strong> ?</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" @click="modalGrade = null">Non</button>
+        <button class="btn-confirm" @click="activateGrade(modalGrade)">Oui</button>
+      </div>
+    </div>
   </div>
-  <div v-if="gradeStore.error" class="error">Erreur : {{ gradeStore.error }}</div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useGradeStore } from '../stores/gradeStore'
 import { useAssigneGrade } from '../composables/useAssigneGrade'
 
-const { assignGrade } = useAssigneGrade()
 const gradeStore = useGradeStore()
-
+const { assignGrade } = useAssigneGrade()
 const loadingGradesMap = ref<Set<number>>(new Set())
+const modalGrade = ref(null)
 
-const handleStartGrade = async (grade) => {
+const confirmActivateGrade = (grade) => {
+  modalGrade.value = grade
+}
+
+const activateGrade = async (grade) => {
+  modalGrade.value = null
   if (loadingGradesMap.value.has(grade.id)) return
   loadingGradesMap.value.add(grade.id)
+
   try {
     await assignGrade(grade)
-    await gradeStore.fetchUserGrades() // refresh des grades de l’utilisateur
+    // Met à jour uniquement le store de l'utilisateur pour activer le grade
+    gradeStore.userGrades.push(grade)
   } finally {
     loadingGradesMap.value.delete(grade.id)
   }
 }
-
-onMounted(() => {
-  gradeStore.fetchGrades()
-  gradeStore.fetchUserGrades()
-})
 </script>
 
 
@@ -97,11 +105,38 @@ onMounted(() => {
   --cream: #fff9f0;
   --card-bg: #ffffff;
 }
-.deja-actif {
-  background-color: #ccc;
-  color: #333;
-  cursor: not-allowed;
+.activated-badge {
+  background: linear-gradient(135deg, var(--accent), #e6c75d);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 1rem;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+  animation: fadeInScale 0.4s ease;
 }
+.activated-badge i {
+  font-size: 1.2rem;
+  color: #4caf50;
+}
+
+/* Animation */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
     /* Section d'information */
 .info-sections {
     display: flex;
@@ -223,6 +258,50 @@ onMounted(() => {
   transform: translateY(-3px);
   box-shadow: 0 6px 16px rgba(212, 175, 55, 0.5);
 }
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 25px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.modal-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.btn-cancel {
+  background: #ccc;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-confirm {
+  background: #d4af37;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
 
 
 /* Responsive mobile */

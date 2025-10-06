@@ -64,7 +64,8 @@ onMounted(() => {
 })
 
 const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('fr-FR', { style: 'decimal' }).format(amount) + ' XOF'
+  `${Math.floor(amount)} XOF`
+
 
 // Appel du composable pour créer le retrait
 const validerRetrait = async () => {

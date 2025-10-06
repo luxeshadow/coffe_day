@@ -1,167 +1,121 @@
+<script setup lang="ts">
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useCreateWallet } from '../composables/useCreateWallet'
+
+const router = useRouter()
+const { createWallet, loading } = useCreateWallet()
+
+// Formulaire
+const formData = reactive({
+  methode_withdrawls: '',
+  telephone_withdrawls: '',
+  password: ''
+})
+
+// Erreurs par champ
+const errors = reactive({
+  methode_withdrawls: '',
+  telephone_withdrawls: '',
+  password: ''
+})
+
+// Gestion affichage mot de passe
+const showPassword = ref(false)
+
+// Moyens de paiement
+const paymentMethods = [
+  { id: 'flooz', name: 'Moov Money', image: '/img/reseaux/moov.jpg' },
+  { id: 'tmoney', name: 'T Money', image: '/img/reseaux/mix.jpg' }
+]
+
+// Sélection d’un moyen de paiement
+const selectPaymentMethod = (methodId: string) => {
+  formData.methode_withdrawls = methodId
+  errors.methode_withdrawls = ''
+}
+
+// Toggle affichage mot de passe
+const togglePasswordVisibility = () => {
+  showPassword.value = !showPassword.value
+}
+
+// Submit du formulaire
+const validerPortefeuille = async () => {
+  // Réinitialiser les erreurs
+
+  try {
+    await createWallet({
+      methode_withdrawls: formData.methode_withdrawls,
+      telephone_withdrawls: formData.telephone_withdrawls,
+      password: formData.password
+    })
+
+    formData.methode_withdrawls = ''
+    formData.telephone_withdrawls = ''
+    formData.password = ''
+    router.push('/profile')
+  } catch (err: any) {
+    console.error('Erreur portefeuille :', err)
+  }
+}
+</script>
+
 <template>
   <div class="wallet-page">
     <div class="wallet-container">
       <div class="wallet-header">
-        <h2 class="wallet-title">
-          <i class="fas fa-wallet"></i> Mon Portefeuille
-        </h2>
+        <h2 class="wallet-title"><i class="fas fa-wallet"></i> Mon Portefeuille</h2>
         <p class="wallet-subtitle">Configurez vos informations de retrait</p>
       </div>
-      
+
       <form class="wallet-form" @submit.prevent="validerPortefeuille">
+        <!-- Moyen de paiement -->
         <div class="wallet-form-group">
-          <label for="nom" class="wallet-label">
-            <i class="fas fa-user"></i> Nom complet
-          </label>
-          <input type="text" id="nom" v-model="formData.nom" class="wallet-input" required placeholder="Votre nom complet">
-          <div v-if="errors.nom" class="wallet-error">
-            <i class="fas fa-exclamation-circle"></i> {{ errors.nom }}
-          </div>
-        </div>
-        
-        <div class="wallet-form-group">
-          <label class="wallet-label">
-            <i class="fas fa-credit-card"></i> Moyen de paiement
-          </label>
-          
+          <label class="wallet-label"><i class="fas fa-credit-card"></i> Moyen de paiement</label>
           <div class="wallet-payment-options">
             <div 
               v-for="method in paymentMethods" 
               :key="method.id"
-              :class="['wallet-payment-option', { active: formData.moyen === method.id }]"
+              :class="['wallet-payment-option', { active: formData.methode_withdrawls === method.id }]"
               @click="selectPaymentMethod(method.id)"
             >
               <img :src="method.image" :alt="method.name" class="wallet-img" />
               <div class="wallet-payment-name">{{ method.name }}</div>
             </div>
           </div>
-          
-          <select id="moyen" v-model="formData.moyen" class="wallet-select" required style="display: none;">
-            <option value="">Sélectionnez</option>
-            <option value="flooz">Moov Money</option>
-            <option value="tmoney">MTN Money</option>
-          </select>
-        </div>
-        
-        <div class="wallet-form-group">
-          <label for="numero" class="wallet-label">
-            <i class="fas fa-phone"></i> Numéro de retrait
-          </label>
-          <input type="tel" id="numero" v-model="formData.numero" class="wallet-input" required pattern="[0-9]{8,15}" placeholder="Ex: 98765432">
-          <div v-if="errors.numero" class="wallet-error">
-            <i class="fas fa-exclamation-circle"></i> {{ errors.numero }}
-          </div>
-        </div>
-        
-        <div class="wallet-form-group">
-          <label for="mdp_retrait" class="wallet-label">
-            <i class="fas fa-lock"></i> Mot de passe de retrait
-          </label>
          
-            <input :type="showPassword ? 'text' : 'password'" id="mdp_retrait" v-model="formData.mdp_retrait" class="wallet-input" required placeholder="Mot de passe de retrait">
-        
-          <div v-if="errors.mdp_retrait" class="wallet-error">
-            <i class="fas fa-exclamation-circle"></i> {{ errors.mdp_retrait }}
-          </div>
         </div>
+
+        <!-- Numéro de retrait -->
+        <div class="wallet-form-group">
+          <label for="numero" class="wallet-label"><i class="fas fa-phone"></i> Numéro de retrait</label>
+          <input type="tel" id="numero" v-model="formData.telephone_withdrawls" class="wallet-input" placeholder="Ex: +22898765432">
         
+        </div>
+
+        <!-- Mot de passe de retrait -->
+        <div class="wallet-form-group">
+          <label for="mdp_retrait" class="wallet-label"><i class="fas fa-lock"></i> Mot de passe de retrait</label>
+          <input :type="showPassword ? 'text' : 'password'" id="mdp_retrait" v-model="formData.password" class="wallet-input" placeholder="Mot de passe de retrait">
+         
+          <button type="button" @click="togglePasswordVisibility">
+            {{ showPassword ? 'Masquer' : 'Afficher' }}
+          </button>
+        </div>
+
         <button type="submit" class="wallet-submit-btn" :disabled="loading">
-          <i class="fas fa-save"></i> 
-          {{ loading ? 'Enregistrement...' : 'Enregistrer' }}
+          <i class="fas fa-save"></i> {{ loading ? 'Enregistrement...' : 'Enregistrer' }}
         </button>
       </form>
       
-      <NuxtLink to="/profile" class="wallet-back-link">
-        <i class="fas fa-arrow-left"></i> Retour au profil
+       <NuxtLink to="/profile" class="recharge-back-link">
+         <i class="fas fa-arrow-left"></i>Retour au profil
       </NuxtLink>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      loading: false,
-      showPassword: false,
-      formData: {
-        nom: '',
-        moyen: '',
-        numero: '',
-        mdp_retrait: ''
-      },
-      errors: {
-        nom: '',
-        moyen: '',
-        numero: '',
-        mdp_retrait: ''
-      },
-      paymentMethods: [
-        { 
-          id: 'flooz', 
-          name: 'Moov Money', 
-          image: '/img/reseaux/moov.jpg'
-        },
-        { 
-          id: 'tmoney', 
-          name: 'MTN Money', 
-          image: '/img/reseaux/mix.jpg'
-        }
-      ]
-    }
-  },
-  methods: {
-    selectPaymentMethod(method) {
-      this.formData.moyen = method;
-      this.errors.moyen = '';
-    },
-    togglePasswordVisibility() {
-      this.showPassword = !this.showPassword;
-    },
-    async validerPortefeuille() {
-      this.errors = { nom: '', moyen: '', numero: '', mdp_retrait: '' };
-      let isValid = true;
-      
-      if (this.formData.nom.length < 3) {
-        this.errors.nom = 'Veuillez entrer votre nom complet';
-        isValid = false;
-      }
-      
-      if (!this.formData.moyen) {
-        this.errors.moyen = 'Veuillez sélectionner un moyen de paiement';
-        isValid = false;
-      }
-      
-      if (this.formData.numero.length < 8) {
-        this.errors.numero = 'Veuillez entrer un numéro valide';
-        isValid = false;
-      }
-      
-      if (this.formData.mdp_retrait.length < 6) {
-        this.errors.mdp_retrait = 'Le mot de passe doit contenir au moins 6 caractères';
-        isValid = false;
-      }
-      
-      if (!isValid) return;
-      
-      this.loading = true;
-      
-      try {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        this.$toast.success('Vos informations de portefeuille ont été enregistrées avec succès!');
-        setTimeout(() => {
-          this.$router.push('/profil');
-        }, 1500);
-      } catch (error) {
-        this.$toast.error('Une erreur est survenue lors de l\'enregistrement');
-        console.error('Erreur portefeuille:', error);
-      } finally {
-        this.loading = false;
-      }
-    }
-  }
-}
-</script>
 
 <style scoped>
 .wallet-page {
@@ -250,7 +204,16 @@ export default {
   gap: 15px;
   margin-top: 10px;
 }
-
+.recharge-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  color: #8a6d6d;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
 .wallet-payment-option {
   padding: 15px;
   border: 2px solid #e5e5e5;

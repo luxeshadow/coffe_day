@@ -5,92 +5,35 @@
       <p>Join our community and contribute to a greener future through smart recycling!</p>
 
       <form @submit.prevent="handleSubmit" id="signup-form">
-        <!-- Last Name -->
-        <div class="form-group">
-          <label for="last-name">Last Name*</label>
-          <input
-            type="text"
-            id="last-name"
-            v-model="form.last_name"
-            placeholder="Doe"
-            required
-            aria-required="true"
-          />
-        </div>
-
-        <!-- First Name -->
-        <div class="form-group">
-          <label for="first-name">First Name*</label>
-          <input
-            type="text"
-            id="first-name"
-            v-model="form.first_name"
-            placeholder="John"
-            required
-            aria-required="true"
-          />
-        </div>
-
+       
         <!-- Username -->
         <div class="form-group">
           <label for="user-name">Username*</label>
-          <input
-            type="text"
-            id="user-name"
-            v-model="form.user_name"
-            placeholder="johndoe123"
-            required
-            aria-required="true"
-          />
+          <input type="text" id="user-name" v-model="form.user_name" placeholder="johndoe123" required />
         </div>
 
         <!-- Phone -->
         <div class="form-group">
           <label for="phone">Enter your phone number*</label>
           <div class="phone-input">
-            <select
-              v-model="form.countryCode"
-              aria-label="Select country code"
-              class="country-select"
-            >
+            <select v-model="form.countryCode" class="country-select">
               <option v-for="country in countries" :key="country.code" :value="country.dial_code">
                 {{ country.dial_code }} ({{ country.code }})
               </option>
             </select>
-
             <div class="phone-wrapper">
               <img :src="selectedCountry.flag" class="flag-inside-input" alt="Selected country flag" />
-              <input
-                type="tel"
-                id="phone"
-                v-model="form.phone"
-                placeholder="e.g. 90123456"
-                required
-                aria-required="true"
-                @input="validatePhone"
-              />
+              <input type="tel" id="phone" v-model="form.phone" placeholder="e.g. 90123456" required />
             </div>
           </div>
-          <span v-if="phoneError" class="error-message">{{ phoneError }}</span>
         </div>
 
         <!-- Password -->
         <div class="form-group password-group">
           <label for="password">Enter your password*</label>
           <div class="password-wrapper">
-            <input
-              :type="showPassword ? 'text' : 'password'"
-              id="password"
-              v-model="form.password"
-              placeholder="Minimum 8 characters"
-              required
-              aria-required="true"
-            />
-            <i
-              :class="showPassword ? 'fi fi-rr-eye' : 'fi fi-rr-eye-crossed'"
-              class="toggle-password"
-              @click="showPassword = !showPassword"
-            ></i>
+            <input :type="showPassword ? 'text' : 'password'" id="password" v-model="form.password" placeholder="Minimum 8 characters" required />
+            <i :class="showPassword ? 'fi fi-rr-eye' : 'fi fi-rr-eye-crossed'" class="toggle-password" @click="showPassword = !showPassword"></i>
           </div>
         </div>
 
@@ -98,40 +41,21 @@
         <div class="form-group password-group">
           <label for="confirm-password">Confirm your password*</label>
           <div class="password-wrapper">
-            <input
-              :type="showConfirmPassword ? 'text' : 'password'"
-              id="confirm-password"
-              v-model="form.confirmPassword"
-              placeholder="Re-enter your password"
-              required
-              aria-required="true"
-            />
-            <i
-              :class="showConfirmPassword ? 'fi fi-rr-eye' : 'fi fi-rr-eye-crossed'"
-              class="toggle-password"
-              @click="showConfirmPassword = !showConfirmPassword"
-            ></i>
+            <input :type="showConfirmPassword ? 'text' : 'password'" id="confirm-password" v-model="form.confirmPassword" placeholder="Re-enter your password" required />
+            <i :class="showConfirmPassword ? 'fi fi-rr-eye' : 'fi fi-rr-eye-crossed'" class="toggle-password" @click="showConfirmPassword = !showConfirmPassword"></i>
           </div>
         </div>
 
         <!-- Invitation Code -->
         <div class="form-group">
           <label for="invitation-code">Invitation code</label>
-          <input
-            type="text"
-            id="invitation-code"
-            v-model="form.invitationCode"
-            readonly
-            aria-readonly="true"
-            placeholder="Auto-generated"
-          />
+          <input type="text" id="invitation-code" v-model="form.invitationCode" readonly placeholder="Auto-generated" />
         </div>
 
-       <button type="submit" :disabled="loading">
-  <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
-  Sign up
-</button>
-
+        <button type="submit" :disabled="loading">
+          <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
+          Sign up
+        </button>
       </form>
 
       <p class="register-link">
@@ -140,16 +64,16 @@
     </div>
   </div>
 </template>
-<script setup>
-import { ref, computed } from 'vue'
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useCreateUser } from '../composables/useRegisterUser'
 
-
-const { createUser, loading} = useCreateUser()
+const route = useRoute()
+const { createUser, loading } = useCreateUser()
 
 const form = ref({
-  last_name: '',
-  first_name: '',
   user_name: '',
   phone: '',
   countryCode: '+228',
@@ -158,7 +82,6 @@ const form = ref({
   invitationCode: ''
 })
 
-const phoneError = ref('')
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 
@@ -169,41 +92,34 @@ const countries = [
   { code: 'SN', dial_code: '+221', flag: '/img/pays/senegal.png' }
 ]
 
-const selectedCountry = computed(() => {
-  return countries.find(c => c.dial_code === form.value.countryCode) || countries[0]
-})
+const selectedCountry = computed(() => countries.find(c => c.dial_code === form.value.countryCode) || countries[0])
 
+// Récupère le code de parrainage s'il est présent dans l'URL
+onMounted(() => {
+  const referralCode = route.query.ref
+  if (referralCode) {
+    form.value.invitationCode = referralCode.toString()
+  }
+})
 
 const handleSubmit = async () => {
   const payload = {
-    last_name: form.value.last_name,
-    first_name: form.value.first_name,
     user_name: form.value.user_name,
-    phone: form.value.phone, 
+    phone: form.value.phone,
     countryCode: form.value.countryCode,
     password: form.value.password,
     confirmPassword: form.value.confirmPassword,
-    parent_invitecode: form.value.invitationCode
+    parent_invitecode: form.value.invitationCode || null
   }
 
-  const registeredUser = await createUser(payload)
- 
+  try {
+    await createUser(payload)
+  } catch (err) {
+    console.error('Erreur lors de la création:', err)
+  }
 }
-
-useHead({
-  link: [
-    {
-      rel: 'stylesheet',
-      href: 'https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css'
-    },
-    {
-      rel: 'stylesheet',
-      href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css'
-    }
-  ]
-})
-
 </script>
+
 
 <style scoped>
 .register-wrapper {
@@ -253,8 +169,7 @@ label {
 input[type="text"],
 input[type="password"],
 input[type="tel"],
-input[readonly],
-select {
+input[readonly] {
   width: 100%;
   padding: 10px 12px;
   border-radius: 8px;
@@ -263,6 +178,17 @@ select {
   outline: none;
   box-sizing: border-box;
 }
+select {
+  width: 100%;
+  height:43px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #6b4e31;
+  font-size: 0.95rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
 
 input:focus,
 select:focus {

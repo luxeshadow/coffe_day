@@ -1,6 +1,5 @@
-// composables/useLoginUser.ts
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useNuxtApp } from '#app'  // ✅ Utiliser ceux de Nuxt
 import { loginValidate } from '../validations/authValidation'
 import authService from '../services/authService'
 import { useAuthStore } from '../stores/authStore'
@@ -20,24 +19,38 @@ export function useLoginUser() {
     try {
       loginValidate(formData)
 
-      // Appel au service pour login
       const data = await authService.login(formData.phone, formData.password)
       if (!data.session) throw new Error('Échec de la connexion.')
 
       const token = data.session.access_token
       const userInfo = data.user || data.session.user
 
-      // Mettre à jour le store
       authStore.setAuth({
         user_name: userInfo.user_name || userInfo.email,
         token,
-         phone: userInfo.user_metadata?.phone || ''
+        phone: userInfo.user_metadata?.phone || ''
       })
 
       user.value = userInfo
 
-      toast({ text: 'Connexion réussie !', backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)' })
-      router.push('/home')
+      toast({
+        text: 'Connexion réussie !',
+        backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)'
+      })
+
+      // Debug navigation
+      console.log('Attempting to navigate to /home')
+      if (process.client) {
+        try {
+          await router.push('/home')
+          console.log('Navigation to /home successful')
+        } catch (navError) {
+          console.error('Navigation error:', navError)
+          throw new Error('Failed to navigate to /home')
+        }
+      } else {
+        console.warn('Navigation attempted on server-side, skipping router.push')
+      }
 
       return userInfo
     } catch (err: any) {
@@ -51,7 +64,10 @@ export function useLoginUser() {
       }
 
       error.value = message
-      toast({ text: message, backgroundColor: 'linear-gradient(to right, #ff5f6d, #ffc371)' })
+      toast({
+        text: message,
+        backgroundColor: 'linear-gradient(to right, #ff5f6d, #ffc371)'
+      })
       return null
     } finally {
       loading.value = false

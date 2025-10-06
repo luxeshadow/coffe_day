@@ -1,22 +1,20 @@
 <template>
   <!-- En-tête avec numéro et grade -->
   <div class="profil-header">
-    <div class="profil-phone-number">
-      <i style="margin-right: 5px;margin-top:-3px" class="fi fi-rr-phone-call"></i>
-      {{ phone }}
-    </div>
-
-    <div class="profil-grade">{{ gradeStore.topGradeName ?? 'Grade 0' }}</div>
+    <div class="profil-phone-number">{{ phone }}</div>
+    <div class="profil-grade">{{ gradeStore.topGradeName ?? 'Collect 0' }}</div>
   </div>
 
   <div class="profil-container">
+    <!-- Section info -->
     <div class="profil-info-section">
       <div class="profil-info-icon">i</div>
       <div class="profil-info-text">
         Gérez facilement votre compte pour suivre vos investissements, consulter vos gains et personnaliser vos
-        paramètres en toute sécurité
+        paramètres en toute sécurité.
       </div>
     </div>
+
     <!-- Carte solde -->
     <div class="profil-balance-card">
       <div class="profil-balance-amount">{{ formatCurrency(gainStore.walletBalance) }}</div>
@@ -32,17 +30,18 @@
         </div>
       </div>
     </div>
-    <!-- Section des gains journaliers et hebdomadaires -->
-   <div class="profil-earnings-section">
-    <div class="profil-earning-card">
-      <div class="profil-earning-title">Gains Journaliers</div>
-      <div class="profil-earning-amount">{{ formatCurrency(gradeStore.dailyIncome) }}</div>
+
+    <!-- Section des gains -->
+    <div class="profil-earnings-section">
+      <div class="profil-earning-card">
+        <div class="profil-earning-title">Gains Journaliers</div>
+        <div class="profil-earning-amount">{{ formatCurrency(gradeStore.dailyIncome) }}</div>
+      </div>
+      <div class="profil-earning-card">
+        <div class="profil-earning-title">Gains Hebdomadaires</div>
+        <div class="profil-earning-amount weekly">{{ formatCurrency(weeklyIncome) }}</div>
+      </div>
     </div>
-    <div class="profil-earning-card">
-      <div class="profil-earning-title">Gains Hebdomadaires</div>
-      <div class="profil-earning-amount weekly">{{ formatCurrency(weeklyIncome) }}</div>
-    </div>
-  </div>
 
     <!-- Actions rapides -->
     <div class="profil-actions-section">
@@ -56,18 +55,21 @@
             <div class="profil-action-title">Recharge</div>
           </div>
         </NuxtLink>
+
         <NuxtLink to="/retrait">
           <div class="profil-action-card">
             <div class="profil-action-icon"><i class="fi fi-rr-chart-mixed-up-circle-dollar"></i></div>
             <div class="profil-action-title">Retrait</div>
           </div>
         </NuxtLink>
+
         <NuxtLink to="/create-wallet">
           <div class="profil-action-card">
             <div class="profil-action-icon"><i class="fi fi-rr-coins"></i></div>
             <div class="profil-action-title">Portefeuille</div>
           </div>
         </NuxtLink>
+
         <NuxtLink to="/history">
           <div class="profil-action-card">
             <div class="profil-action-icon"><i class="fi fi-rr-rectangle-history-circle-plus"></i></div>
@@ -76,40 +78,364 @@
         </NuxtLink>
       </div>
     </div>
+
+    <!-- Section de parrainage -->
+    <div class="referral-section">
+      <div class="referral-card">
+        <div class="referral-header">
+          <i class="fi fi-rr-gift"></i>
+          <h3>Votre lien de parrainage</h3>
+        </div>
+
+        <p class="referral-description">
+          Partagez votre lien avec vos amis et gagnez des récompenses pour chaque inscription validée.
+        </p>
+
+        <!-- Section lien parrainage -->
+<div class="referral-link-container">
+  <label class="referral-label" for="referralInput">Lien à partager :</label>
+  <div class="referral-input-group">
+    <input
+      id="referralInput"
+      class="referral-input"
+      type="text"
+      :value="referralStore.loading ? 'Chargement...' : referralStore.referralLink"
+      readonly
+      @click="copyReferral"
+    />
+    <button class="copy-button" @click="copyReferral" :disabled="referralStore.loading">
+      <i class="fi fi-rr-copy"></i>
+    </button>
   </div>
+</div>
+
+
+        <div class="referral-benefits">
+          <div style="margin-bottom:10px;" class="benefit-item">
+            <i class="fi fi-rr-plus"></i>
+            Vous avez parrainé {{ referralStore.referralCount }}
+          </div>
+        </div>
+      
+<!-- Liste des utilisateurs parrainés -->
+<div v-if="referralStore.referrals.length" class="referral-users-box">
+  <h4 class="referral-users-title">Utilisateurs parrainés</h4>
+  <ul class="referral-users-list">
+    <li v-for="(user, index) in referralStore.referrals" :key="index" class="referral-user-item">
+      <div class="referral-user-info">
+        <span class="user-name">{{ user.user_name }}</span>
+        <span class="user-phone">{{ user.phone }}</span>
+      </div>
+    </li>
+  </ul>
+</div>
+
+<!-- Aucun parrainé -->
+<div v-else class="no-referral-users">
+  <p>Aucun utilisateur parrainé pour le moment.</p>
+</div>
+
+      </div>
+    </div>
+  </div>
+
   <BottomNavigation />
 </template>
+
 
 <script setup lang="ts">
 import { onMounted, computed } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import { useGainStore } from '../stores/gainStore'
 import { useGradeStore } from '../stores/gradeStore'
+import { useReferralStore } from '../stores/referralStore'
+import { useNuxtApp } from '#app'
 
 const authStore = useAuthStore()
 const gainStore = useGainStore()
 const gradeStore = useGradeStore()
+const referralStore = useReferralStore()
+const { $toast } = useNuxtApp()
 
 const phone = computed(() => authStore.phone)
-
-// Fonction de formatage monétaire
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('fr-FR', { style: 'decimal' }).format(amount) + ' XOF'
-
-// Récupération des gains au montage
-onMounted(async () => {
-  gainStore.fetchUserGains()
-  await gradeStore.fetchUserDailyIncome() // <-- Appel du service pour récupérer le dailyIncome et topGrade
-})
-
-// Calcul des gains hebdomadaires
 const weeklyIncome = computed(() => gradeStore.dailyIncome * 7)
+
+const formatCurrency = (amount: number) => {
+  const rounded = Math.floor(amount)
+  return new Intl.NumberFormat('fr-FR', { style: 'decimal' }).format(rounded) + ' XOF'
+}
+
+const copyReferral = async () => {
+  if (!referralStore.referralLink) return
+  try {
+    await navigator.clipboard.writeText(referralStore.referralLink)
+    $toast({
+      text: 'Lien de parrainage copié avec succès !',
+      backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
+    })
+  } catch {
+    $toast({
+      text: 'Impossible de copier le lien.',
+      backgroundColor: 'linear-gradient(to right, #ff5f6d, #ffc371)',
+    })
+  }
+}
+
+onMounted(async () => {
+  await gainStore.fetchUserGains()
+  await gradeStore.fetchUserDailyIncome()
+  await referralStore.loadReferralData()
+})
 </script>
 
 
-
-
 <style scoped>
+
+.referral-section {
+  margin: 1.5rem 0;
+}
+
+.referral-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0 0.5rem;
+}
+
+.referral-header i {
+  color: var(--accent);
+  font-size: 1.2rem;
+}
+
+.referral-header h3 {
+  color: var(--primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.referral-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(139, 109, 109, 0.1);
+}
+
+.referral-description {
+  color: var(--text);
+  font-size: 0.9rem;
+  margin-bottom: 1.2rem;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.referral-link-container {
+  margin-bottom: 1.2rem;
+}
+
+.referral-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+.referral-input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.referral-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--cream);
+  border-radius: 12px;
+  background: var(--cream);
+  font-size: 0.85rem;
+  color: var(--text);
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.referral-input:focus {
+  border-color: var(--accent);
+  background: white;
+}
+
+.referral-input:read-only {
+  cursor: pointer;
+}
+
+.copy-button {
+  background: linear-gradient(135deg, var(--accent), #e6c12d);
+  border: none;
+  border-radius: 12px;
+  padding: 0 1rem;
+  color: var(--primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+}
+
+.copy-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.copy-button:active {
+  transform: translateY(0);
+}
+
+.copy-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.copy-button i {
+  font-size: 1rem;
+}
+
+/* Bénéfices du parrainage */
+.referral-benefits {
+  display: flex;
+  justify-content: space-around;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(139, 109, 109, 0.1);
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--coffee);
+}
+
+.benefit-item i {
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+/*liste parainage*/
+.referral-users-box {
+  margin-top: 1rem;
+   margin-bottom: 1.5rem;
+  background: var(--cream);
+  padding: 0.5rem;
+  border-radius: 12px;
+
+}
+
+.referral-users-title {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 0.8rem;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.referral-users-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.referral-user-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.7rem 1rem;
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 0.6rem;
+  transition: all 0.2s ease;
+}
+
+.referral-user-item:hover {
+  transform: translateY(-2px);
+ 
+}
+
+.referral-user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+.user-phone {
+  font-size: 0.85rem;
+  color: var(--coffee);
+}
+
+.no-referral-users {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #777;
+  margin-top: 1rem;
+}
+
+/* Animation de confirmation */
+.copy-success {
+  animation: copyPulse 0.6s ease-in-out;
+}
+
+@keyframes copyPulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(0.95);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .referral-card {
+    padding: 1.2rem;
+  }
+
+  .referral-input-group {
+    flex-direction: column;
+  }
+
+  .copy-button {
+    padding: 0.75rem;
+    min-width: auto;
+  }
+
+  .referral-benefits {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .benefit-item {
+    justify-content: center;
+  }
+}
+
+/* État de chargement */
+.referral-input:placeholder-shown {
+  color: #999;
+  font-style: italic;
+}
+
 :root {
   --primary: #3b2f2f;
   --secondary: #6b4e31;
@@ -166,7 +492,7 @@ const weeklyIncome = computed(() => gradeStore.dailyIncome * 7)
   border-radius: 20px;
   font-weight: 600;
   font-size: 0.9rem;
-   text-transform: capitalize;
+  text-transform: capitalize;
 }
 
 /* Section d'information */

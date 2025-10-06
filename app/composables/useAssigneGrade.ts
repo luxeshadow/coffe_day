@@ -39,7 +39,7 @@ export function useAssigneGrade() {
         .insert([{
           id_user: userId,
           amount: grade.amounts,
-          status: 'achat'
+          status: 'Achat de boite'
         }])
       if (withdrawError) throw withdrawError
 

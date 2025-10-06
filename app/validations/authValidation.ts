@@ -18,13 +18,7 @@ export const loginValidate = (user: Pick<User, 'phone' | 'password'>): true => {
 }
 
 export const registerValidate = (user: Partial<User> & { confirmPassword: string,countryCode: string }): true => {
-  if (!user.last_name || user.last_name.trim().length < 2) {
-    throw new Error('Le nom est requis (au moins 2 caractères).')
-  }
 
-  if (!user.first_name || user.first_name.trim().length < 2) {
-    throw new Error('Le prénom est requis (au moins 2 caractères).')
-  }
 
   const countryCodeRegex = /^\+\d{1,4}$/
   if (!user.countryCode || !countryCodeRegex.test(user.countryCode)) {

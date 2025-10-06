@@ -2,21 +2,22 @@
   "name": "nuxt-app",
   "type": "module",
   "private": true,
-
- "scripts": {
-  "dev": "nuxt dev",
-  "build": "nuxt generate",
-  "preview": "nuxt preview",
-  "postinstall": "nuxt prepare"
-},
-
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "start": "node .output/server/index.mjs"
+  },
   "dependencies": {
     "@nuxt/icon": "^2.0.0",
     "@pinia/nuxt": "^0.11.2",
     "@supabase/supabase-js": "^2.58.0",
     "@tanstack/vue-query": "^5.90.2",
+    "@vite-pwa/nuxt": "^1.0.4",
     "nuxt": "^4.1.1",
     "pinia": "^3.0.3",
+    "pinia-plugin-persistedstate": "^4.5.0",
     "toastify-js": "^1.12.0",
     "vue": "^3.5.21",
     "vue-phone-number-input": "^1.12.13",

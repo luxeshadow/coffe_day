@@ -23,21 +23,15 @@ const gradeApi = {
   assignGradeToUser: async (id_grade: number) => {
     const { $supabase } = useNuxtApp()
 
+    // On récupère directement le user connecté depuis auth
     const { data: { user }, error: userError } = await $supabase.auth.getUser()
     if (userError || !user) throw new Error('Utilisateur non authentifié')
 
-    const { data: userRow, error: userDbError } = await $supabase
-      .from('users')
-      .select('id')
-      .eq('phone', user.user_metadata.phone)
-      .single()
-
-    if (userDbError || !userRow) throw new Error('Utilisateur introuvable dans la table users')
-
+    // On insère dans assigne_user_grade avec user.id (UUID)
     const { data, error } = await $supabase
       .from('assigne_user_grade')
       .insert([{
-        id_user: userRow.id,
+        id_user: user.id,
         id_grade,
       }])
       .select()
@@ -62,71 +56,49 @@ const gradeApi = {
   getUserGrades: async (): Promise<Grade[]> => {
     const { $supabase } = useNuxtApp()
 
-    // Récupérer l'utilisateur connecté
     const { data: { user }, error: userError } = await $supabase.auth.getUser()
     if (userError || !user) throw new Error('Utilisateur non authentifié')
 
-    // Chercher son id dans la table users
-    const { data: userRow, error: userDbError } = await $supabase
-      .from('users')
-      .select('id')
-      .eq('phone', user.user_metadata.phone)
-      .single()
-    if (userDbError || !userRow) throw new Error('Utilisateur introuvable dans la table users')
-
-    // Récupérer les grades assignés
     const { data, error } = await $supabase
       .from('assigne_user_grade')
       .select('id_grade, grades(*)')
-      .eq('id_user', userRow.id)
-    
+      .eq('id_user', user.id)
+
     if (error) throw error
-    
+    if (!data) return []
+
     return data.map((row: any) => row.grades) as Grade[]
   },
 
   getUserDailyIncomeAndTopGrade: async () => {
-  const { $supabase } = useNuxtApp()
+    const { $supabase } = useNuxtApp()
 
-  // Récupérer l'utilisateur connecté
-  const { data: { user }, error: userError } = await $supabase.auth.getUser()
-  if (userError || !user) throw new Error('Utilisateur non authentifié')
+    const { data: { user }, error: userError } = await $supabase.auth.getUser()
+    if (userError || !user) throw new Error('Utilisateur non authentifié')
 
-  // Chercher son id dans la table users
-  const { data: userRow, error: userDbError } = await $supabase
-    .from('users')
-    .select('id')
-    .eq('phone', user.user_metadata.phone)
-    .single()
-  if (userDbError || !userRow) throw new Error('Utilisateur introuvable dans la table users')
+    const { data: assignedGrades, error } = await $supabase
+      .from('assigne_user_grade')
+      .select('id_grade, grades(*)')
+      .eq('id_user', user.id)
 
-  // Récupérer les grades assignés
-  const { data: assignedGrades, error } = await $supabase
-    .from('assigne_user_grade')
-    .select('id_grade, grades(*)')
-    .eq('id_user', userRow.id)
+    if (error) throw error
+    if (!assignedGrades || assignedGrades.length === 0) {
+      return { dailyIncome: 0, topGradeName: null }
+    }
 
-  if (error) throw error
-  if (!assignedGrades || assignedGrades.length === 0) return { dailyIncome: 0, topGradeName: null }
+    const grades: Grade[] = assignedGrades.map((row: any) => row.grades)
 
-  const grades: Grade[] = assignedGrades.map((row: any) => row.grades)
+    const dailyIncome = grades.reduce((sum, g) => sum + (g.daily_income ?? 0), 0)
 
-  // Calcul du gain journalier total
-  const dailyIncome = grades.reduce((sum, g) => sum + (g.daily_income ?? 0), 0)
+    const topGrade = grades.reduce((prev, curr) => {
+      return (curr.daily_income ?? 0) > (prev.daily_income ?? 0) ? curr : prev
+    }, grades[0])
 
-  // Trouver le grade avec le daily_income le plus élevé
-  const topGrade = grades.reduce((prev, curr) => {
-    return (curr.daily_income ?? 0) > (prev.daily_income ?? 0) ? curr : prev
-  }, grades[0])
-
-  return {
-    dailyIncome,
-    topGradeName: topGrade.grade_name
+    return {
+      dailyIncome,
+      topGradeName: topGrade.grade_name
+    }
   }
-}
-
-   
-
 }
 
 export default gradeApi

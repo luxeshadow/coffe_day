@@ -11,8 +11,6 @@ export function useCreateUser() {
   const router = useRouter()
 
   const createUser = async (formData: {
-    last_name: string
-    first_name: string
     user_name: string
     phone: string
     countryCode: string
@@ -28,8 +26,6 @@ export function useCreateUser() {
       const fullPhone = `${formData.countryCode}${formData.phone}`
 
       const newUser: User = {
-        last_name: formData.last_name.trim(),
-        first_name: formData.first_name.trim(),
         user_name: formData.user_name.trim(),
         phone: fullPhone,
         password: formData.password,
@@ -48,7 +44,7 @@ export function useCreateUser() {
       user.value = registeredUser
 
       toast({ text: 'Inscription réussie !', backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)' })
-      router.push('/login')
+      router.push('/')
 
       return registeredUser
 

@@ -16,9 +16,9 @@
           <template v-else>{{ masked ? "**** XOF" : walletBalanceFormatted }}</template>
         </span>
 
-        <button class="gain-mask-toggle" @click="toggleMask">
-          <i v-if="masked" class="fi fi-rr-eye"></i>
-          <i v-else class="fi fi-rr-eye-crossed"></i>
+        <button style="margin-top:-5px" class="gain-mask-toggle" @click="toggleMask">
+          <i style="margin-top:4px" v-if="masked" class="fi fi-rr-eye"></i>
+          <i style="margin-top:4px" v-else class="fi fi-rr-eye-crossed"></i>
         </button>
       </div>
 
@@ -35,8 +35,8 @@
 
 <script setup lang="ts">
 import '~/assets/css/gain-card.css'
-import { ref, computed, onMounted } from 'vue'
-import { useGainStore } from '@/stores/gainStore'
+import { ref, computed } from 'vue'
+import { useGainStore } from '../stores/gainStore'
 
 const masked = ref(false)
 const toggleMask = () => {
@@ -46,15 +46,10 @@ const toggleMask = () => {
 // Store Pinia
 const gainStore = useGainStore()
 
-// Formattage du montant avec sécurité
+// Formattage du montant (masque les décimales côté affichage uniquement)
 const walletBalanceFormatted = computed(() => {
   const amount = gainStore.walletBalance ?? 0
-  return Number(amount).toLocaleString() + ' XOF'
-})
-
-
-// Récupérer les gains au montage
-onMounted(() => {
-  gainStore.fetchUserGains()
+  return Math.floor(amount).toLocaleString() + ' XOF'
 })
 </script>
+

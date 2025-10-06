@@ -1,9 +1,9 @@
-// models/user.ts
+// models/Use.ts
 export interface User {    
-  last_name: string
-  first_name: string
-  phone: string           
+  phone: string
   password: string
   parent_invitecode: string
-  user_name:string
+  user_name: string
+  role?: string  
+  auth_id?: string  
 }

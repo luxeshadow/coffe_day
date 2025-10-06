@@ -49,10 +49,8 @@ export function useRecharge() {
         throw new Error('tx_reference non reçu de PayGate')
       }
 
-      // 5️⃣ Attente de 10 secondes avant de checker le statut
-      await new Promise(resolve => setTimeout(resolve, 10000))
+      await new Promise(resolve => setTimeout(resolve, 30000))
 
-      // 6️⃣ Vérification du statut après délai
       const statusRes = await paygateService.checkPaymentStatus(String(paygateRes.tx_reference))
       console.log('Statut du paiement:', statusRes)
 
