@@ -25,11 +25,11 @@ const authApi = {
     if (authError) throw authError
     if (!authData.user) throw new Error('Utilisateur non créé dans Supabase Auth')
 
-    // Insertion dans la table "users"
+    // Insertion des informations dans la table "users"
     const { error: insertError } = await $supabase
       .from('users')
       .insert([{
-        auth_id: authData.user.id,
+        auth_id: authData.user.id, // <-- lien avec Supabase Auth
         user_name: user.user_name,
         phone: user.phone,
         parent_invitecode: user.parent_invitecode
@@ -37,11 +37,12 @@ const authApi = {
 
     if (insertError) throw insertError
 
+    // Retourne les données d'authentification
     return authData
   },
 
   // -------------------- LOGIN --------------------
-  login: async (phone: string, password: string) => {
+ login: async (phone: string, password: string) => {
     const { $supabase } = useNuxtApp()
 
     const phoneWithoutCode = phone.replace(/^\+\d{1,3}/, '')
@@ -55,7 +56,7 @@ const authApi = {
     if (error) throw new Error(error.message)
     if (!data.user) throw new Error('Utilisateur non trouvé.')
 
-    // 2️⃣ Récupération du rôle depuis "users" + jointure "roles"
+    // 2️⃣ Récupération du rôle depuis la table "users" + jointure "roles"
     const { data: userData, error: userError } = await $supabase
       .from('users')
       .select(`
@@ -71,7 +72,7 @@ const authApi = {
 
     if (userError || !userData) throw new Error("Impossible de récupérer les informations utilisateur.")
 
-    // 3️⃣ Retourne les infos essentielles
+    // 3️⃣ Retourne les infos essentielles (token, role, etc.)
     return {
       session: data.session,
       user: {
@@ -82,7 +83,6 @@ const authApi = {
       }
     }
   },
-
   // -------------------- LOGOUT --------------------
   logout: async () => {
     const { $supabase } = useNuxtApp()

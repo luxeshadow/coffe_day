@@ -10,8 +10,8 @@ export default defineNuxtConfig({
     '@vite-pwa/nuxt'
   ],
 
-  nitro: {
-    preset: 'netlify'
+ nitro: {
+    preset: 'vercel'
   },
 
   runtimeConfig: {

@@ -37,12 +37,12 @@
             class="recharge-input"
             min="1"
             required
-            placeholder="Minimum 1000 XOF"
+            placeholder="Entré montant à recharger"
           />
 
-          <div class="recharge-note">
+          <!-- <div class="recharge-note">
             <i class="fas fa-info-circle"></i> Montant minimum : 1 000 XOF
-          </div>
+          </div> -->
         </div>
 
         <!-- Méthodes de paiement -->

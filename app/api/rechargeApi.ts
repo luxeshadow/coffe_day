@@ -2,7 +2,6 @@
 //api/rechargeApi
 import { useNuxtApp } from '#app'
 import type { Recharge } from '../models/Recharge'
-import { paygateService } from '../services/paygateService'
 
 const rechargeApi = {
 
