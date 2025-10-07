@@ -25,11 +25,14 @@ export function useLoginUser() {
       const token = data.session.access_token
       const userInfo = data.user || data.session.user
 
-      authStore.setAuth({
-        user_name: userInfo.user_name || userInfo.email,
-        token,
-        phone: userInfo.user_metadata?.phone || ''
-      })
+authStore.setAuth({
+  user_name: userInfo.user_name || userInfo.email,
+  token,
+  phone: userInfo.phone || userInfo.user_metadata?.phone || '',
+  role: userInfo.role || 'user'
+})
+
+
 
       user.value = userInfo
 

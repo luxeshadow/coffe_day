@@ -5,11 +5,11 @@
       <div class="sidebar-header flex items-center justify-between">
         <div class="flex items-center space-x-3">
           <img
-            src="https://i.postimg.cc/kGXgkBsQ/ceet.jpg"
+            src="https://i.postimg.cc/MTZBmtyx/coffee-cup.png"
             alt="CEET"
             class="w-8 h-8 object-contain"
           />
-          <span>EcoBoost</span>
+          <span>EconNest</span>
         </div>
         <button class="close-sidebar" @click="closeSidebar">
           <i class="fas fa-times"></i>

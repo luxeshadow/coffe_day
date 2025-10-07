@@ -5,6 +5,8 @@ import { useGainStore } from '../stores/gainStore'
 import { useGradeStore } from '../stores/gradeStore'
 import { useAuthStore } from '../stores/authStore'
 
+
+
 export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig()
 

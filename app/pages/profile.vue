@@ -1,7 +1,7 @@
 <template>
   <!-- En-tête avec numéro et grade -->
   <div class="profil-header">
-    <div class="profil-phone-number">{{ phone }}</div>
+    <div class="profil-phone-number">{{ authStore.phone }}</div>
     <div class="profil-grade">{{ gradeStore.topGradeName ?? 'Collect 0' }}</div>
   </div>
 
