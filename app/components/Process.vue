@@ -13,13 +13,15 @@
         <div class="process-name">Collectez</div>
         <div class="process-desc">Rassemblez vos gobelets NESCAFÉ usagés</div>
     </div>
+
     <div class="process-card">
         <div class="process-icon">
-            <i class="fi fi-rr-qrcode"></i>
+            <i class="fi fi-rr-referral-alt"></i>
         </div>
-        <div class="process-name">Scannez</div>
-        <div class="process-desc">Utilisez l'application pour scanner</div>
+        <div class="process-name">Parrainez</div>
+        <div class="process-desc">Invitez vos amis et gagnez des bonus</div>
     </div>
+
     <div class="process-card">
         <div class="process-icon">
             <i class="fi fi-rr-gift"></i>
@@ -29,6 +31,7 @@
     </div>
 </div>
 </template>
+
 <script setup>
 import '~/assets/css/process.css'
 </script>

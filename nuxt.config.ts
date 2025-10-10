@@ -10,7 +10,7 @@ export default defineNuxtConfig({
     '@vite-pwa/nuxt'
   ],
 
- nitro: {
+  nitro: {
     preset: 'vercel'
   },
 
@@ -38,10 +38,16 @@ export default defineNuxtConfig({
           href: '/manifest.webmanifest'
         }
       ],
+      script: [
+        {
+          src: 'https://cdn.jsdelivr.net/npm/chart.js',
+          defer: true
+        }
+      ],
       meta: [
         { name: 'mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
-        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }
       ]
     }
   },
@@ -54,9 +60,9 @@ export default defineNuxtConfig({
       globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg}'],
       navigateFallback: '/',
       navigateFallbackDenylist: [
-        /^\/api\//,                // exclut les API
-        /^\/manifest\.webmanifest$/ // exclut le manifest
-      ],
+        /^\/api\//,
+        /^\/manifest\.webmanifest$/
+      ]
     },
     manifest: {
       name: 'EcoNest',

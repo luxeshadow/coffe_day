@@ -71,10 +71,11 @@
         </div>
 
         <!-- Bouton valider -->
-        <button type="submit" class="recharge-submit-btn" :disabled="loading">
-          <i class="fas fa-check-circle"></i>
-          {{ loading ? "Traitement en cours..." : "Valider la recharge" }}
-        </button>
+       <button type="submit" class="recharge-submit-btn" :disabled="loading">
+  <i class="fas fa-check-circle"></i>
+  {{ loading ? `Traitement en cours... (${countdown}s)` : "Valider la recharge" }}
+</button>
+
       </form>
 
       <NuxtLink to="/profile" class="recharge-back-link">
@@ -85,10 +86,13 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from "vue"
+import { reactive, ref } from "vue"
 import { useRecharge } from "../composables/useCreateRecharge"
 
 const { loading, createRecharge } = useRecharge()
+
+const countdown = ref(30) // ⬅ compteur 30s
+let timer: any = null
 
 const formData = reactive({
   phone: "",
@@ -100,8 +104,17 @@ function selectPaymentMethod(method: string) {
   formData.paymentMethod = method
 }
 
+function startCountdown() {
+  countdown.value = 30
+  timer = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) clearInterval(timer)
+  }, 1000)
+}
+
 async function validerRecharge() {
   try {
+    startCountdown()
     await createRecharge({
       phone: formData.phone,
       amount: formData.amount,
@@ -109,6 +122,7 @@ async function validerRecharge() {
     })
   } catch (err: any) {
     console.error("Erreur recharge:", err)
+    clearInterval(timer)
   }
 }
 </script>

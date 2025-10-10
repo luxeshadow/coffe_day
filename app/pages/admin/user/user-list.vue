@@ -1,31 +1,93 @@
 <template>
- 
-      <h2>Gestion des Rôles</h2>
-      
+  <section class="user-list">
+    <!-- ✅ Header -->
+    <div class="page-header">
+      <h2>Liste des utilisateurs</h2>
+      <input
+        type="search"
+        v-model="q"
+        class="search-input"
+        placeholder="Rechercher par nom ou téléphone..."
+      />
+    </div>
 
+    <!-- ✅ Table responsive -->
+    <div class="table-container">
+      <div v-if="loading" class="loading">Chargement...</div>
+      <div v-else-if="error" class="error">Erreur: {{ error }}</div>
 
-    
+      <table v-else-if="filteredUsers.length" class="roles-table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Téléphone</th>
+            <th>Grades</th>
+            <th>Filleuls</th>
+            <th>Wallet</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="user in filteredUsers" :key="user.id">
+            <td>{{ user.user_name || '—' }}</td>
+            <td>{{ user.phone }}</td>
+            <td>
+              <span
+                v-for="g in user.grades"
+                :key="g.id_grade"
+                class="permission-badge"
+              >
+                {{ g.grade?.grade_name }} ({{ g.grade?.daily_income }}/j)
+              </span>
+            </td>
+            <td> <ul>
+                <li v-for="c in user.children" :key="c.id">{{ c.user_name }}</li>
+              </ul></td>
+            <td>
+              <span class="status-badge active">
+                {{ user.walletBalance.toFixed(2) }} F
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
- 
+      <div v-else class="empty-state">
+        <i class="fas fa-user-slash"></i>
+        <p>Aucun utilisateur trouvé...</p>
+      </div>
+    </div>
+  </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useUserStore } from '../../../stores/userStore'
 
-const availablePermissions = ref([
-  { id: 'users.read', name: 'Lecture utilisateurs' },
-  { id: 'users.write', name: 'Écriture utilisateurs' },
-  { id: 'roles.manage', name: 'Gestion des rôles' },
-  { id: 'settings.manage', name: 'Gestion des paramètres' },
-  { id: 'content.moderate', name: 'Modération du contenu' },
-  { id: 'profile.manage', name: 'Gestion du profil' }
-])
+definePageMeta({ layout: 'dashboard' })
 
+const userStore = useUserStore()
+const q = ref('')
 
+const filteredUsers = computed(() => {
+  if (!q.value) return userStore.users
+  const term = q.value.toLowerCase()
+  return userStore.users.filter(
+    u =>
+      (u.user_name?.toLowerCase().includes(term)) ||
+      (u.phone.includes(q.value))
+  )
+})
 
+onMounted(() => {
+  if (!userStore.users.length) userStore.loadUsers()
+})
 </script>
 
+
 <style scoped>
-.roles-page {
+.user-list {
+  max-width: 1150px;
+  margin: 0 auto;
   padding: 20px;
 }
 
@@ -33,367 +95,96 @@ const availablePermissions = ref([
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  padding-bottom: 15px;
+  margin-bottom: 25px;
+  padding-bottom: 10px;
   border-bottom: 2px solid var(--light-accent);
 }
 
 .page-header h2 {
+  font-size: 1.6rem;
+  font-weight: bold;
   color: var(--primary-dark);
-  font-size: 1.8rem;
 }
 
-.btn-add {
-  background-color: var(--accent);
-  color: var(--white);
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  transition: background-color 0.3s;
+.search-input {
+  padding: 10px 12px;
+  width: 260px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: #fff;
+  transition: 0.3s;
+}
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
-.btn-add:hover {
-  background-color: #c19b2a;
-}
-
+/* ✅ TABLE RESPONSIVE */
 .table-container {
   background: var(--white);
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
 }
 
 .roles-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 700px; /* ✅ Important pour le responsive */
 }
 
 .roles-table th {
-  background-color: var(--light-bg);
-  padding: 15px;
-  text-align: left;
+  background: var(--light-bg);
+  padding: 12px;
   font-weight: 600;
+  text-align: left;
   color: var(--primary-dark);
-  border-bottom: 2px solid var(--light-accent);
 }
 
 .roles-table td {
-  padding: 15px;
+  padding: 12px;
   border-bottom: 1px solid #eee;
 }
 
 .roles-table tr:hover {
-  background-color: var(--light-cream);
+  background-color: rgba(0, 0, 0, 0.03);
 }
 
+.table-container::-webkit-scrollbar {
+  height: 6px;
+}
+.table-container::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 4px;
+}
+
+/* Badges */
 .permission-badge {
   background-color: var(--light-bg);
-  color: var(--medium-dark);
   padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.8rem;
   margin-right: 5px;
-  display: inline-block;
-}
-
-.more-permissions {
-  color: var(--light-accent);
+  border-radius: 4px;
   font-size: 0.8rem;
-}
-
-.status-badge {
-  padding: 6px 12px;
-  border-radius: 15px;
-  font-size: 0.8rem;
-  font-weight: 600;
 }
 
 .status-badge.active {
   background-color: #e8f5e8;
   color: #2e7d32;
+  padding: 6px 10px;
+  border-radius: 12px;
 }
 
-.status-badge.inactive {
-  background-color: #ffebee;
-  color: #c62828;
-}
-
-.actions {
-  display: flex;
-  gap: 10px;
-}
-
-.btn-edit, .btn-delete {
-  padding: 8px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.btn-edit {
-  background-color: var(--light-bg);
-  color: var(--secondary-dark);
-}
-
-.btn-edit:hover {
-  background-color: #e0e0e0;
-}
-
-.btn-delete {
-  background-color: #ffebee;
-  color: #c62828;
-}
-
-.btn-delete:hover {
-  background-color: #ffcdd2;
-}
-
+/* Empty state */
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
-  color: var(--light-accent);
+  padding: 40px;
+  color: #888;
 }
-
 .empty-state i {
-  font-size: 3rem;
-  margin-bottom: 20px;
-  opacity: 0.5;
-}
-
-.empty-state p {
-  margin-bottom: 20px;
-  font-size: 1.1rem;
-}
-
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s;
-}
-
-.modal-overlay.active {
-  opacity: 1;
-  visibility: visible;
-}
-
-.modal {
-  background: var(--white);
-  border-radius: 8px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  transform: scale(0.9);
-  transition: transform 0.3s;
-}
-
-.modal-overlay.active .modal {
-  transform: scale(1);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #eee;
-}
-
-.modal-header h3 {
-  color: var(--primary-dark);
-  margin: 0;
-}
-
-.btn-close {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: var(--light-accent);
-}
-
-.btn-close:hover {
-  color: var(--primary-dark);
-}
-
-.modal-form {
-  padding: 20px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 600;
-  color: var(--primary-dark);
-}
-
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.form-group input:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.permissions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.permission-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  transition: background-color 0.3s;
-}
-
-.permission-checkbox:hover {
-  background-color: var(--light-bg);
-}
-
-.status-toggle {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-}
-
-.slider {
-  position: relative;
-  width: 50px;
-  height: 24px;
-  background-color: #ccc;
-  border-radius: 24px;
-  transition: background-color 0.3s;
-}
-
-.slider:before {
-  content: '';
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background-color: white;
-  top: 2px;
-  left: 2px;
-  transition: transform 0.3s;
-}
-
-input[type="checkbox"]:checked + .slider {
-  background-color: var(--accent);
-}
-
-input[type="checkbox"]:checked + .slider:before {
-  transform: translateX(26px);
-}
-
-input[type="checkbox"] {
-  display: none;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 30px;
-}
-
-.btn-cancel, .btn-submit, .btn-delete-confirm {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.btn-cancel {
-  background-color: var(--light-bg);
-  color: var(--medium-dark);
-}
-
-.btn-submit {
-  background-color: var(--accent);
-  color: var(--white);
-}
-
-.btn-submit:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-.btn-delete-confirm {
-  background-color: #d32f2f;
-  color: white;
-}
-
-.delete-modal .modal-content {
-  padding: 20px;
-  text-align: center;
-}
-
-.warning-icon {
-  font-size: 3rem;
-  color: #ff9800;
-  margin-bottom: 15px;
-}
-
-.warning-text {
-  color: #d32f2f;
-  font-weight: 600;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    gap: 15px;
-    align-items: flex-start;
-  }
-  
-  .roles-table {
-    font-size: 0.9rem;
-  }
-  
-  .roles-table th,
-  .roles-table td {
-    padding: 10px 5px;
-  }
-  
-  .permissions-grid {
-    grid-template-columns: 1fr;
-  }
+  font-size: 2rem;
+  opacity: 0.6;
 }
 </style>
+

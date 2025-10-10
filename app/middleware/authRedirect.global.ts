@@ -21,7 +21,7 @@ export default defineNuxtRouteMiddleware((to) => {
     // Redirection selon rôle
     if (authStore.role === 'admin' && !to.path.startsWith('/admin')) {
       // un admin qui essaie d’aller sur /home ou autre
-      return navigateTo('/admin/user/role')
+      return navigateTo('/admin/user/stat')
     }
 
     if (authStore.role !== 'admin' && to.path.startsWith('/admin')) {

@@ -1,7 +1,8 @@
 <template>
   <div class="dashboard-container">
     <!-- Sidebar -->
-    <aside id="sidebar" :class="sidebarClasses">
+    <aside id="sidebar" :class="['sidebar', { 'sidebar-open': isSidebarOpen }]">
+
       <div class="sidebar-header flex items-center justify-between">
         <div class="flex items-center space-x-3">
           <img
@@ -16,76 +17,84 @@
         </button>
       </div>
 
-      <div class="nav-dasho">
+      <nav class="nav-dasho">
         <ul class="space-y-1-dash">
           <li>
-            <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile">
+            <NuxtLink
+              to="/admin/user/stat"
+              class="flex items-center"
+              @click="closeSidebarOnMobile"
+              replace
+            >
               <i class="fi fi-rr-chart-kanban"></i>
               Statistiques
             </NuxtLink>
           </li>
 
           <!-- Gestion Ressources -->
-          <li>
-            <button class="flex items-center justify-between w-full" @click="toggleDropdown('gestion')">
-              <span><i class="fi fi-rr-function-process"></i> Gestion Ressources</span>
-              <i :class="gestionDropdownClasses"></i>
-            </button>
-            <ul :class="gestionSubmenuClasses">
+         
               <li>
-                <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile">
-                  <i class="fas fa-plus mr-3 text-sm"></i> Gestion des Utilisateur
+                <NuxtLink
+                  to="/admin/user/user-list"
+                  class="flex items-center"
+                  @click="closeSidebarOnMobile"
+                  replace
+                >
+                  <i class="fas fa-plus mr-3 text-sm"></i> Gestion des Utilisateurs
                 </NuxtLink>
               </li>
               <li>
-                <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile">
-                  <i class="fas fa-plus mr-3 text-sm"></i> Gestion des Retrais
+                <NuxtLink
+                  to="/admin/role"
+                  class="flex items-center"
+                  @click="closeSidebarOnMobile"
+                  replace
+                >
+                  <i class="fas fa-plus mr-3 text-sm"></i> Gestion des Retraits
                 </NuxtLink>
               </li>
+              
               <li>
-                <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile">
-                  <i class="fas fa-plus mr-3 text-sm"></i> Gestion Rôles
+                <NuxtLink
+                  to="/admin/role"
+                  class="flex items-center"
+                  @click="closeSidebarOnMobile"
+                  replace
+                >
+                  <i class="fas fa-plus mr-3 text-sm"></i> Gestion des Notifications
                 </NuxtLink>
               </li>
-              <li>
-                <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile">
-                  <i class="fas fa-plus mr-3 text-sm"></i> Gestion des Grade
-                </NuxtLink>
-              </li>
-              <li>
-                <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile">
-                  <i class="fas fa-plus mr-3 text-sm"></i> Gestion des Avatar
-                </NuxtLink>
-              </li>
-              <li>
-                <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile">
-                  <i class="fas fa-plus mr-3 text-sm"></i> Gestion des Notification
-                </NuxtLink>
-              </li>
-            </ul>
-          </li>
+           
 
           <li>
-            <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile">
+            <NuxtLink
+              to="/admin/role"
+              class="flex items-center"
+              @click="closeSidebarOnMobile"
+              replace
+            >
               <i class="fi fi-rr-user"></i>
               Assets
             </NuxtLink>
           </li>
         </ul>
-      </div>
+      </nav>
     </aside>
 
     <!-- Overlay mobile -->
     <div v-if="isSidebarOpen" class="backdrop" @click="closeSidebar"></div>
 
     <!-- Main content -->
-    <div class="main-content" id="main-content" :class="sidebarClasses">
-      <!-- Navbar -->
+   <div class="main-content" :class="{ 'sidebar-open': isSidebarOpen }">
+
       <header>
         <div class="header-container">
           <div class="header-inner">
             <div class="flex items-center space-x-3">
-              <button class="menu-toggle" @click="toggleSidebar"></button>
+             <button class="menu-toggle" @click="toggleSidebar">
+  <i class="fi fi-rr-bars-sort"></i>
+</button>
+
             </div>
             <span class="mone">{{ pageTitle }}</span>
             <div class="header-actions">
@@ -99,8 +108,16 @@
                 <button class="user-btn" @click="toggleDropdown('profile')">
                   <i class="fi fi-rr-admin-alt"></i>
                 </button>
-                <div class="user-dropdown" :class="{ 'user-dropdown-active': openDropdown === 'profile' }">
-                  <NuxtLink to="/admin/profile" class="flex items-center" @click="toggleDropdown(null)">
+                <div
+                  class="user-dropdown"
+                  :class="{ 'user-dropdown-active': openDropdown === 'profile' }"
+                >
+                  <NuxtLink
+                    to="/admin/profile"
+                    class="flex items-center"
+                    @click="toggleDropdown(null)"
+                    replace
+                  >
                     <i class="fas fa-user-edit mr-2"></i>
                     Modifier mon profil
                   </NuxtLink>
@@ -114,7 +131,6 @@
         </div>
       </header>
 
-      <!-- Page content -->
       <main>
         <slot />
       </main>
@@ -123,46 +139,40 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 
-// Sidebar & dropdown
 const isSidebarOpen = ref(false)
 const openDropdown = ref(null)
 const pageTitle = 'Tableau de Bord'
 
-const toggleSidebar = () => { isSidebarOpen.value = !isSidebarOpen.value }
-const closeSidebar = () => { isSidebarOpen.value = false }
+// Sidebar
+const toggleSidebar = () => isSidebarOpen.value = !isSidebarOpen.value
+const closeSidebar = () => isSidebarOpen.value = false
 const closeSidebarOnMobile = () => { if (window.innerWidth < 768) closeSidebar() }
-const toggleDropdown = (dropdown) => {
-  openDropdown.value = openDropdown.value === dropdown ? null : dropdown
-}
-const logout = () => {
-  console.log('Déconnexion')
-  openDropdown.value = null
-}
 
-// Classes dynamiques via computed
-const sidebarClasses = computed(() => ({ 'sidebar-open': isSidebarOpen.value }))
-const gestionSubmenuClasses = computed(() => ({
-  submenu: true,
-  active: openDropdown.value === 'gestion'
-}))
-const gestionDropdownClasses = computed(() => [
-  'fas',
-  openDropdown.value === 'gestion' ? 'fa-chevron-up' : 'fa-chevron-down',
-  'text-sm'
-])
+// Dropdowns
+const toggleDropdown = (dropdown) => openDropdown.value = openDropdown.value === dropdown ? null : dropdown
+const logout = () => { console.log('Déconnexion'); openDropdown.value = null }
 
-// Fermer dropdown si clic à l'extérieur
+// Gestion du clic à l'extérieur
 const handleClickOutside = (event) => {
-  if (!event.target.closest('.dropdown-trigger') && !event.target.closest('.profile-trigger')) {
-    openDropdown.value = null
-  }
+  // Sidebar dropdown
+  const sidebarDropdowns = ['submenu', 'dropdown-trigger', 'user-menu']
+  const clickedInside = sidebarDropdowns.some(cls => event.target.closest(`.${cls}`))
+  if (!clickedInside) openDropdown.value = null
 }
+
+// Afficher backdrop sur mobile si sidebar ouvert
+const backdropClasses = ref('')
+watch(isSidebarOpen, (val) => {
+  backdropClasses.value = val ? 'backdrop-visible' : ''
+})
 
 onMounted(() => document.addEventListener('click', handleClickOutside))
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
+
+
 
 
 <style>

@@ -1,5 +1,5 @@
 <template>
-
+  <div class="roles-page">
     <!-- En-tête de page avec bouton d'ajout -->
     <div class="page-header">
       <h2>Gestion des Rôles</h2>
@@ -9,7 +9,160 @@
       </button>
     </div>
 
-   
+    <!-- Tableau des rôles -->
+    <div class="table-container">
+      <table class="roles-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nom du rôle</th>
+            <th>Description</th>
+            <th>Permissions</th>
+            <th>Date de création</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="role in roles" :key="role.id">
+            <td>{{ role.id }}</td>
+            <td>{{ role.name }}</td>
+            <td>{{ role.description }}</td>
+            <td>
+              <span class="permission-badge" v-for="perm in role.permissions.slice(0, 2)" :key="perm">
+                {{ perm }}
+              </span>
+              <span v-if="role.permissions.length > 2" class="more-permissions">
+                +{{ role.permissions.length - 2 }} autres
+              </span>
+            </td>
+            <td>{{ formatDate(role.createdAt) }}</td>
+            <td>
+              <span class="status-badge" :class="role.status">
+                {{ role.status === 'active' ? 'Actif' : 'Inactif' }}
+              </span>
+            </td>
+            <td class="actions">
+              <button class="btn-edit" @click="editRole(role)" title="Modifier">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button 
+                class="btn-delete" 
+                @click="confirmDelete(role)"
+                title="Supprimer"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Message si aucun rôle -->
+      <div v-if="roles.length === 0" class="empty-state">
+        <i class="fas fa-users-cog"></i>
+        <p>Aucun rôle n'a été créé pour le moment</p>
+        <button class="btn-add" @click="openAddModal">
+          <i class="fas fa-plus"></i>
+          Ajouter votre premier rôle
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal d'ajout/modification -->
+    <div class="modal-overlay" :class="{ active: showModal }" @click="closeModal">
+      <div class="modal" @click.stop>
+        <div class="modal-header">
+          <h3>{{ isEditing ? 'Modifier le rôle' : 'Ajouter un nouveau rôle' }}</h3>
+          <button class="btn-close" @click="closeModal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <form @submit.prevent="submitForm" class="modal-form">
+          <div class="form-group">
+            <label for="roleName">Nom du rôle *</label>
+            <input
+              id="roleName"
+              v-model="form.name"
+              type="text"
+              required
+              placeholder="Ex: Administrateur"
+            >
+          </div>
+          
+          <div class="form-group">
+            <label for="roleDescription">Description</label>
+            <textarea
+              id="roleDescription"
+              v-model="form.description"
+              placeholder="Description du rôle..."
+              rows="3"
+            ></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Permissions</label>
+            <div class="permissions-grid">
+              <label v-for="permission in availablePermissions" :key="permission.id" class="permission-checkbox">
+                <input
+                  type="checkbox"
+                  :value="permission.id"
+                  v-model="form.permissions"
+                >
+                <span class="checkmark"></span>
+                {{ permission.name }}
+              </label>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="status-toggle">
+              <input type="checkbox" v-model="form.status" true-value="active" false-value="inactive">
+              <span class="slider"></span>
+              <span class="status-label">
+                {{ form.status === 'active' ? 'Rôle actif' : 'Rôle inactif' }}
+              </span>
+            </label>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" @click="closeModal">
+              Annuler
+            </button>
+            <button type="submit" class="btn-submit" :disabled="!form.name">
+              {{ isEditing ? 'Modifier' : 'Ajouter' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal de confirmation de suppression -->
+    <div class="modal-overlay" :class="{ active: showDeleteModal }" @click="closeDeleteModal">
+      <div class="modal delete-modal" @click.stop>
+        <div class="modal-header">
+          <h3>Confirmer la suppression</h3>
+          <button class="btn-close" @click="closeDeleteModal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-content">
+          <i class="fas fa-exclamation-triangle warning-icon"></i>
+          <p>Êtes-vous sûr de vouloir supprimer le rôle <strong>"{{ roleToDelete?.name }}"</strong> ?</p>
+          <p class="warning-text">Cette action est irréversible.</p>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" @click="closeDeleteModal">
+            Annuler
+          </button>
+          <button class="btn-delete-confirm" @click="deleteRole">
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
