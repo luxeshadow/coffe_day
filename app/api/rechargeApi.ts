@@ -5,31 +5,28 @@ import type { Recharge } from '../models/Recharge'
 
 const rechargeApi = {
 
- createRecharge: async (recharge: Recharge) => {
+createRecharge: async (recharge: Recharge) => {
   const { $supabase } = useNuxtApp()
 
-  // Vérifier si l'utilisateur est connecté
+  // 🔹 Vérification immédiate de la session
   const { data: { user }, error: userError } = await $supabase.auth.getUser()
   if (userError || !user) throw new Error('Utilisateur non authentifié')
-
   const userId = user.id
 
-  // Vérifier si l'utilisateur a déjà fait une recharge
+  // Vérifier si c’est la première recharge et montant ≥ 10 000
   const { data: existingRecharges, error: existingError } = await $supabase
     .from('recharges')
     .select('id')
     .eq('id_user', userId)
-
   if (existingError) throw existingError
 
-  // Si aucune recharge n'existe, vérifier que le montant ≥ 10 000
   if (!existingRecharges || existingRecharges.length === 0) {
     if (recharge.amount < 10000) {
       throw new Error('Le premier dépôt ne peut pas être inférieur à 10 000 XOF.')
     }
   }
 
-  // Créer la recharge
+  // Sauvegarde la recharge dans Supabase
   const { data, error } = await $supabase
     .from('recharges')
     .insert([{
@@ -44,7 +41,6 @@ const rechargeApi = {
     .single()
 
   if (error) throw error
-
   return data as Recharge
 },
 
