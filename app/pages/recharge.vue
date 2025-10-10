@@ -14,15 +14,8 @@
           <label for="telephone" class="recharge-label">
             <i class="fi fi-rr-mobile-notch"></i> Numéro de téléphone
           </label>
-          <input
-            type="tel"
-            id="telephone"
-            v-model="formData.phone"
-            class="recharge-input"
-            required
-            pattern="[0-9]{8,15}"
-            placeholder="Ex: 98765432"
-          />
+          <input type="tel" id="telephone" v-model="formData.phone" class="recharge-input" required
+            pattern="[0-9]{8,15}" placeholder="Ex: 98765432" />
         </div>
 
         <!-- Montant -->
@@ -30,14 +23,8 @@
           <label for="montant" class="recharge-label">
             <i class="fi fi-rr-send-money"></i> Montant à recharger
           </label>
-          <input
-            type="number"
-            id="montant"
-            v-model="formData.amount"
-            class="recharge-input"
-            required
-            placeholder="Entré montant à recharger"
-          />
+          <input type="number" id="montant" v-model="formData.amount" class="recharge-input" required
+            placeholder="Entré montant à recharger" />
 
           <!-- <div class="recharge-note">
             <i class="fas fa-info-circle"></i> Montant minimum : 1 000 XOF
@@ -50,19 +37,13 @@
             <i class="fas fa-wallet"></i> Méthode de paiement
           </h3>
           <div class="recharge-payment-options">
-            <div
-              class="recharge-payment-option"
-              :class="{ active: formData.paymentMethod === 'tmoney' }"
-              @click="selectPaymentMethod('tmoney')"
-            >
+            <div class="recharge-payment-option" :class="{ active: formData.paymentMethod === 'tmoney' }"
+              @click="selectPaymentMethod('tmoney')">
               <i class="fas fa-mobile-alt"></i>
               <span>TMoney</span>
             </div>
-            <div
-              class="recharge-payment-option"
-              :class="{ active: formData.paymentMethod === 'flooz' }"
-              @click="selectPaymentMethod('flooz')"
-            >
+            <div class="recharge-payment-option" :class="{ active: formData.paymentMethod === 'flooz' }"
+              @click="selectPaymentMethod('flooz')">
               <i class="fas fa-sim-card"></i>
               <span>Flooz</span>
             </div>
@@ -70,51 +51,44 @@
         </div>
 
         <!-- Bouton valider -->
-  <button type="submit" class="recharge-submit-btn" :disabled="loading">
+      <button type="submit" class="recharge-submit-btn" :disabled="loading">
   <i class="fas fa-check-circle"></i>
   {{ loading ? `Traitement en cours... (${countdown}s)` : "Valider la recharge" }}
 </button>
 
 
+
       </form>
 
       <NuxtLink to="/profile" class="recharge-back-link">
-         <i class="fas fa-arrow-left"></i>Retour au profil
+        <i class="fas fa-arrow-left"></i>Retour au profil
       </NuxtLink>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue"
+import { reactive } from "vue"
 import { useRecharge } from "../composables/useCreateRecharge"
+
+// ✅ On récupère tout depuis le composable
 const { loading, countdown, createRecharge } = useRecharge()
 
-
-const countdown = ref(30) // ⬅ compteur 30s
-let timer: any = null
-
+// ✅ Données du formulaire
 const formData = reactive({
   phone: "",
   amount: 1,
   paymentMethod: "tmoney",
 })
 
+// ✅ Sélection méthode de paiement
 function selectPaymentMethod(method: string) {
   formData.paymentMethod = method
 }
 
-function startCountdown() {
-  countdown.value = 30
-  timer = setInterval(() => {
-    countdown.value--
-    if (countdown.value <= 0) clearInterval(timer)
-  }, 1000)
-}
-
+// ✅ Soumission du formulaire
 async function validerRecharge() {
   try {
-    startCountdown()
     await createRecharge({
       phone: formData.phone,
       amount: formData.amount,
@@ -122,15 +96,16 @@ async function validerRecharge() {
     })
   } catch (err: any) {
     console.error("Erreur recharge:", err)
-    clearInterval(timer)
   }
 }
 </script>
 
 
+
 <style scoped>
 .recharge-page {
-  background-color: #f8f5f0;;
+  background-color: #f8f5f0;
+  ;
   color: #333333;
   padding: 10px;
   display: flex;
@@ -309,6 +284,7 @@ async function validerRecharge() {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
