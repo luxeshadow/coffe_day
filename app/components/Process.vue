@@ -16,7 +16,7 @@
 
     <div class="process-card">
         <div class="process-icon">
-            <i class="fi fi-rr-referral-alt"></i>
+            <i class="fi fi-rr-referral"></i>
         </div>
         <div class="process-name">Parrainez</div>
         <div class="process-desc">Invitez vos amis et gagnez des bonus</div>

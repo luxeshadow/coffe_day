@@ -35,7 +35,6 @@
             id="montant"
             v-model="formData.amount"
             class="recharge-input"
-            min="1"
             required
             placeholder="Entré montant à recharger"
           />
@@ -71,10 +70,11 @@
         </div>
 
         <!-- Bouton valider -->
-       <button type="submit" class="recharge-submit-btn" :disabled="loading">
+  <button type="submit" class="recharge-submit-btn" :disabled="loading">
   <i class="fas fa-check-circle"></i>
   {{ loading ? `Traitement en cours... (${countdown}s)` : "Valider la recharge" }}
 </button>
+
 
       </form>
 
@@ -88,8 +88,8 @@
 <script setup lang="ts">
 import { reactive, ref } from "vue"
 import { useRecharge } from "../composables/useCreateRecharge"
+const { loading, countdown, createRecharge } = useRecharge()
 
-const { loading, createRecharge } = useRecharge()
 
 const countdown = ref(30) // ⬅ compteur 30s
 let timer: any = null
@@ -220,7 +220,7 @@ async function validerRecharge() {
   border: none;
   padding: 16px;
   border-radius: 12px;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
