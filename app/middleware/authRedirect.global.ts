@@ -1,34 +1,32 @@
-// middleware/authGuard.ts
 import { defineNuxtRouteMiddleware, navigateTo } from '#app'
 import { useAuthStore } from '../stores/authStore'
 
-export default defineNuxtRouteMiddleware(async (to) => {
+export default defineNuxtRouteMiddleware((to) => {
   const authStore = useAuthStore()
-  const { $supabase } = useNuxtApp()
-
-  // Charger depuis localStorage
-  authStore.loadFromLocalStorage()
-
-  
-  // Vérifier session Supabase
-  const { data: { session }, error } = await $supabase.auth.getSession()
-
-  if (!session || error) {
-    
-    authStore.logout() // vider tous les stores
-    return navigateTo('/') // rediriger vers login
-  }
-
   const publicRoutes = ['/', '/register']
-  
+  const adminRoutes = ['/admin']
+
+  // Si non connecté et page privée -> redirige vers login
   if (!authStore.token && !publicRoutes.includes(to.path)) {
     return navigateTo('/')
   }
 
-  // Gestion rôle
+  // Si connecté
   if (authStore.token) {
-    if (publicRoutes.includes(to.path)) return navigateTo('/home')
-    if (authStore.role === 'admin' && !to.path.startsWith('/admin')) return navigateTo('/admin/user/stat')
-    if (authStore.role !== 'admin' && to.path.startsWith('/admin')) return navigateTo('/home')
+    // Empêcher accès aux pages publiques pour un user normal
+    if (publicRoutes.includes(to.path)) {
+      return navigateTo('/home')
+    }
+
+    // Redirection selon rôle
+    if (authStore.role === 'admin' && !to.path.startsWith('/admin')) {
+      // un admin qui essaie d’aller sur /home ou autre
+      return navigateTo('/admin/user/stat')
+    }
+
+    if (authStore.role !== 'admin' && to.path.startsWith('/admin')) {
+      // un user normal qui tente une page admin
+      return navigateTo('/home')
+    }
   }
 })

@@ -1,16 +1,13 @@
-import { defineNuxtPlugin } from '#app'
+import { defineNuxtPlugin, useRuntimeConfig } from '#app'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { useRouter } from 'vue-router'
 import { useGainStore } from '../stores/gainStore'
 import { useGradeStore } from '../stores/gradeStore'
 import { useAuthStore } from '../stores/authStore'
 
-
-
 export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig()
 
-  // 🔹 Variables Supabase depuis .env (en majuscules)
   const supabaseUrl = config.public.SUPABASE_URL
   const supabaseKey = config.public.SUPABASE_KEY
 
@@ -21,26 +18,35 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey)
 
-  // Intercepteur global pour les requêtes Supabase
   const router = useRouter()
   const gainStore = useGainStore()
   const gradeStore = useGradeStore()
   const authStore = useAuthStore()
 
-  // Wrapper helper pour intercepter les erreurs 401
-  const wrapWithAuthInterceptor = async (fn: Function, ...args: any[]) => {
-    const { data, error } = await fn(...args)
-    if (error?.status === 401) {
-      console.warn('⚠️ Session expirée, déconnexion...')
+  // ✅ Écouteur global de session Supabase
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (!session || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESH_FAILED') {
+      console.warn('⚠️ Session Supabase expirée ou invalide → logout global')
       gainStore.$reset()
       gradeStore.$reset()
-      authStore.$reset()
+      authStore.logout() // propre + vide aussi localStorage
+      router.push('/')
+    }
+  })
+
+  // ✅ Intercepteur sécurisé
+  const supabaseWithAuth = async (fn: Function, ...args: any[]) => {
+    const { data, error } = await fn(...args)
+    if (error?.status === 401) {
+      console.warn('⚠️ 401 détecté → session expirée → purge immédiate')
+      gainStore.$reset()
+      gradeStore.$reset()
+      authStore.logout()
       router.push('/')
     }
     return { data, error }
   }
 
-  // Injection Nuxt
   nuxtApp.provide('supabase', supabase)
-  nuxtApp.provide('supabaseWithAuth', wrapWithAuthInterceptor)
+  nuxtApp.provide('supabaseWithAuth', supabaseWithAuth)
 })
