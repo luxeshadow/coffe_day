@@ -115,7 +115,7 @@ const logout = async () => {
     openDropdown.value = null
 
     // Redirection login
-    router.push('/login')
+    router.push('/')
   } catch (e) {
     console.error('Erreur logout:', e)
   }
