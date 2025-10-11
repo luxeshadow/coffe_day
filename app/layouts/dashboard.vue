@@ -30,24 +30,12 @@
             </NuxtLink>
           </li>
           <li>
-            <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile" replace>
+            <NuxtLink to="/admin/user/withdrawal" class="flex items-center" @click="closeSidebarOnMobile" replace>
               <i class="fas fa-plus mr-3 text-sm"></i> Gestion des Retraits
             </NuxtLink>
           </li>
 
-          <li>
-            <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile" replace>
-              <i class="fas fa-plus mr-3 text-sm"></i> Gestion des Notifications
-            </NuxtLink>
-          </li>
-
-
-          <li>
-            <NuxtLink to="/admin/role" class="flex items-center" @click="closeSidebarOnMobile" replace>
-              <i class="fi fi-rr-user"></i>
-              Assets
-            </NuxtLink>
-          </li>
+         
         </ul>
       </nav>
     </aside>

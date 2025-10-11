@@ -20,7 +20,7 @@ const gradeApi = {
     return data
   },
 
-  assignGradeToUser: async (id_grade: number) => {
+assignGradeToUser: async (id_grade: number) => {
   const { $supabase } = useNuxtApp()
 
   // 1️⃣ Récupérer le user connecté
@@ -65,13 +65,15 @@ const gradeApi = {
         id_user: parentUser.id,
         amount: 1000,
         phone: parentUser.phone,
-        methode: 'Recompense', // ou autre valeur pour indiquer la source
+        methode: 'Recompense',
         reference: `reward_from_${user.id}`,
         identifier: null,
         created_at: new Date().toISOString()
       }])
     }
-  },
+  }
+}, // <-- ici tu fermes assignGradeToUser avec une virgule
+
 
   getAllGrades: async (): Promise<Grade[]> => {
     const { $supabase } = useNuxtApp()

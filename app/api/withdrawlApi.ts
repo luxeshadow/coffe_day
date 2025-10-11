@@ -97,13 +97,13 @@ createWithdrawl: async (payload: CreateWithdrawlPayload): Promise<Withdrawl> => 
   // Récupérer retraits payés
   getWithdrawlsPaid: async (): Promise<Withdrawl[]> => {
     const all = await withdrawlApi.getUserWithdrawls()
-    return all.filter(w => w.status === 'payed')
+    return all.filter(w => w.status === 'Payer')
   },
 
   // Récupérer retraits en attente
   getWithdrawlsPending: async (): Promise<Withdrawl[]> => {
     const all = await withdrawlApi.getUserWithdrawls()
-    return all.filter(w => w.status === 'pending')
+    return all.filter(w => w.status === 'En cours')
   },
 
   // Récupérer tous les retraits (pour admin)
