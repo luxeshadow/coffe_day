@@ -27,7 +27,7 @@
             <th>Status</th>
             <th>Méthode</th>
             <th>Téléphone</th>
-             <th>Créé le</th>
+            <th>Créé le</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -86,14 +86,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useNuxtApp } from '#app'
 
 definePageMeta({ layout: 'dashboard' })
 
 interface WithdrawlWithUser {
   id: number
-  id_user: string        // <- ajouté
+  id_user: string
   amount: number
   status: string
   created_at: string
@@ -156,7 +156,6 @@ const fetchWithdrawls = async () => {
   }))
 }
 
-
 // ------------------- ACTIONS
 const confirmPayWithdrawl = async (w: WithdrawlWithUser) => {
   const ok = await openConfirmModal(`Confirmer paiement`, `Payer ${w.amount} ?`)
@@ -170,8 +169,9 @@ const confirmCancelWithdrawl = async (w: WithdrawlWithUser) => {
   const ok = await openConfirmModal(`Annuler retrait`, `Annuler ${w.amount} ?`)
   if (!ok) return
 
-  await $supabase.from('withdrawls').delete().eq('id', w.id)
-  // On insert avec id_user correct
+  // ✅ On change juste le statut au lieu de supprimer
+  await $supabase.from('withdrawls').update({ status: 'Annulé' }).eq('id', w.id)
+
   if (w.id_user) {
     await $supabase.from('recharges').insert([{
       id_user: w.id_user,
@@ -191,6 +191,7 @@ const confirmCancelWithdrawl = async (w: WithdrawlWithUser) => {
 watch([currentPage, filterStatus, searchPhone], () => fetchWithdrawls())
 onMounted(() => fetchWithdrawls())
 </script>
+
 
 
 
