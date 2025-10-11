@@ -7,7 +7,7 @@ export const statApi = {
     const { data, error } = await $supabase
       .from('withdrawls')
       .select('amount')
-      .eq('status', 'success')
+      .eq('status', 'Payé')
 
     if (error) throw error
     return (data || []).reduce((sum, w) => sum + Number(w.amount), 0)
