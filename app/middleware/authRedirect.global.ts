@@ -3,33 +3,30 @@ import { useAuthStore } from '../stores/authStore'
 
 export default defineNuxtRouteMiddleware((to) => {
   const authStore = useAuthStore()
-
-  // ✅ Routes publiques
   const publicRoutes = ['/', '/register']
+  const adminRoutes = ['/admin']
+  
 
-  // Autoriser aussi /register/, /register?ref=xxx, etc.
-  const isPublicRoute =
-    publicRoutes.includes(to.path) ||
-    to.path.startsWith('/register')
-
-  // ✅ Si utilisateur NON connecté → accès OK seulement aux pages publiques
-  if (!authStore.token && !isPublicRoute) {
+  // Si non connecté et page privée -> redirige vers login
+  if (!authStore.token && !publicRoutes.includes(to.path)) {
     return navigateTo('/')
   }
 
-  // ✅ Si utilisateur connecté
+  // Si connecté
   if (authStore.token) {
-    // Bloquer accès à / et /register une fois connecté
-    if (isPublicRoute) {
+    // Empêcher accès aux pages publiques pour un user normal
+    if (publicRoutes.includes(to.path)) {
       return navigateTo('/home')
     }
 
-    // ✅ Gestion des rôles
+    // Redirection selon rôle
     if (authStore.role === 'admin' && !to.path.startsWith('/admin')) {
-      return navigateTo('/admin/user/stat')
+      // un admin qui essaie d’aller sur /home ou autre
+      return navigateTo('/admin/user/role')
     }
 
     if (authStore.role !== 'admin' && to.path.startsWith('/admin')) {
+      // un user normal qui tente une page admin
       return navigateTo('/home')
     }
   }
