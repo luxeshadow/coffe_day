@@ -27,6 +27,7 @@
             <th>Status</th>
             <th>Méthode</th>
             <th>Téléphone</th>
+             <th>Créé le</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -38,6 +39,8 @@
             <td>{{ w.status }}</td>
             <td>{{ w.wallet?.methode_withdrawls || '-' }}</td>
             <td>{{ w.wallet?.telephone_withdrawls || '-' }}</td>
+            <td>{{ new Date(w.created_at).toLocaleString() }}</td>
+            
             <td>
               <button 
                 v-if="w.status === 'En cours...'" 
