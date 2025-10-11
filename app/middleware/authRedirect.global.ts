@@ -4,25 +4,27 @@ import { useAuthStore } from '../stores/authStore'
 export default defineNuxtRouteMiddleware((to) => {
   const authStore = useAuthStore()
 
-  // ✅ Routes publiques accessibles sans connexion
+  // ✅ Routes publiques
   const publicRoutes = ['/', '/register']
 
-  // ✅ On vérifie si la route actuelle correspond à une route publique
-  const isPublicRoute = publicRoutes.some(route => to.path.startsWith(route))
+  // Autoriser aussi /register/, /register?ref=xxx, etc.
+  const isPublicRoute =
+    publicRoutes.includes(to.path) ||
+    to.path.startsWith('/register')
 
-  // ⛔ Si pas connecté et route privée → redirige vers /
+  // ✅ Si utilisateur NON connecté → accès OK seulement aux pages publiques
   if (!authStore.token && !isPublicRoute) {
     return navigateTo('/')
   }
 
-  // ✅ Utilisateur connecté
+  // ✅ Si utilisateur connecté
   if (authStore.token) {
-    // 🚫 Empêcher accès aux routes publiques pour les connectés
+    // Bloquer accès à / et /register une fois connecté
     if (isPublicRoute) {
       return navigateTo('/home')
     }
 
-    // ✅ Redirection par rôle
+    // ✅ Gestion des rôles
     if (authStore.role === 'admin' && !to.path.startsWith('/admin')) {
       return navigateTo('/admin/user/stat')
     }
