@@ -24,7 +24,7 @@
 import '~/assets/css/withdrawal.css'
 import { ref, onMounted } from 'vue'
 
-const repeatedWithdrawals = [
+const withdrawals = [
   "228****4821 a retiré 4 872 XOF",
   "228****7352 a retiré 5 122 XOF",
   "228****6194 a retiré 11 580 XOF",
@@ -57,7 +57,6 @@ const repeatedWithdrawals = [
   "228****7613 a retiré 6 880 XOF"
 ]
 
-
 const repeatedWithdrawals = ref([])
 
 onMounted(() => {
@@ -65,4 +64,5 @@ onMounted(() => {
     return withdrawals[i % withdrawals.length]
   })
 })
+
 </script>
