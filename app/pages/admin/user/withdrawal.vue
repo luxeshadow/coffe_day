@@ -148,8 +148,14 @@ const fetchWithdrawls = async () => {
     console.error('Erreur fetch:', error)
     return
   }
-  withdrawls.value = data || []
+
+  // On map pour récupérer id_user depuis le wallet
+  withdrawls.value = (data || []).map((w: any) => ({
+    ...w,
+    id_user: w.wallet?.id_user ?? null
+  }))
 }
+
 
 // ------------------- ACTIONS
 const confirmPayWithdrawl = async (w: WithdrawlWithUser) => {
