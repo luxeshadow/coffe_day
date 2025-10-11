@@ -86,10 +86,12 @@ const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 
 const countries = [
-  { code: 'TG', dial_code: '+228', flag: '/img/pays/togo.png' },
+  { code: 'CA', dial_code: '+237', flag: '/img/pays/cameroun.png' },
+    { code: 'TG', dial_code: '+228', flag: '/img/pays/togo.png' },
   { code: 'BF', dial_code: '+226', flag: '/img/pays/burkina.png' },
   { code: 'BN', dial_code: '+229', flag: '/img/pays/benin.png' },
   { code: 'SN', dial_code: '+221', flag: '/img/pays/senegal.png' }
+  
 ]
 
 const selectedCountry = computed(() => countries.find(c => c.dial_code === form.value.countryCode) || countries[0])
