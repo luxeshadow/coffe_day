@@ -24,23 +24,26 @@ export default defineNuxtPlugin((nuxtApp) => {
   const authStore = useAuthStore()
 
   // ✅ Écouteur global de session Supabase
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (!session || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESH_FAILED') {
-      console.warn('⚠️ Session Supabase expirée ou invalide → logout global')
-      gainStore.$reset()
-      gradeStore.$reset()
-      authStore.logout() // propre + vide aussi localStorage
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (!session) {
+      console.warn('⚠️ Session Supabase expirée → logout global')
+
+      // Stores setup() : utiliser clearStore ou logout personnalisés
+      gainStore.clearStore()
+      gradeStore.clearStore() // si setup() store ne possède pas clearStore
+      authStore.logout()
+
       router.push('/')
     }
   })
 
-  // ✅ Intercepteur sécurisé
+  // ✅ Intercepteur sécurisé pour requêtes Supabase
   const supabaseWithAuth = async (fn: Function, ...args: any[]) => {
     const { data, error } = await fn(...args)
     if (error?.status === 401) {
       console.warn('⚠️ 401 détecté → session expirée → purge immédiate')
-      gainStore.$reset()
-      gradeStore.$reset()
+      gainStore.clearStore()
+      gradeStore.clearStore()
       authStore.logout()
       router.push('/')
     }

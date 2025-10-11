@@ -483,7 +483,9 @@ onMounted(async () => {
 .profil-phone-number {
   font-size: 1.2rem;
   font-weight: 600;
+  text-decoration: none;
 }
+
 
 .profil-grade {
   background-color: var(--accent);

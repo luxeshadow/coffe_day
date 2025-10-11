@@ -78,7 +78,7 @@
               <div class="user-menu">
                 <button class="user-btn" @click="toggleDropdown('profile')">
                   <a href="#" class="user-deconnexion" @click="logout">
-                    <i class="fas fa-sign-out-alt mr-2"></i> Déconnexion
+                    <i class="fas fa-sign-out-alt mr-2"></i>
                   </a>
                 </button>
 

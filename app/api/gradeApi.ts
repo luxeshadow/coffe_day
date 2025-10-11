@@ -21,24 +21,56 @@ const gradeApi = {
   },
 
   assignGradeToUser: async (id_grade: number) => {
-    const { $supabase } = useNuxtApp()
+  const { $supabase } = useNuxtApp()
 
-    // On récupère directement le user connecté depuis auth
-    const { data: { user }, error: userError } = await $supabase.auth.getUser()
-    if (userError || !user) throw new Error('Utilisateur non authentifié')
+  // 1️⃣ Récupérer le user connecté
+  const { data: { user }, error: userError } = await $supabase.auth.getUser()
+  if (userError || !user) throw new Error('Utilisateur non authentifié')
 
-    // On insère dans assigne_user_grade avec user.id (UUID)
-    const { data, error } = await $supabase
-      .from('assigne_user_grade')
-      .insert([{
-        id_user: user.id,
-        id_grade,
-      }])
-      .select()
+  // 2️⃣ Assigner le grade
+  const { data: assignedGrade, error } = await $supabase
+    .from('assigne_user_grade')
+    .insert([{ id_user: user.id, id_grade }])
+    .select()
+    .single()
+  if (error) throw error
+
+  // 3️⃣ Récupérer le parrain
+  const { data: parentUser } = await $supabase
+    .from('users')
+    .select('id, auth_id, phone')
+    .eq('invitecode', user.parent_invitecode)
+    .single()
+
+  if (parentUser) {
+    // 4️⃣ Vérifier si la reward existe déjà
+    const { data: existingReward } = await $supabase
+      .from('referral_rewards')
+      .select('*')
+      .eq('user_auth_id', user.id)
+      .eq('parent_auth_id', parentUser.auth_id)
       .single()
 
-    if (error) throw error
-    return data
+    if (!existingReward) {
+      // 5️⃣ Créer la reward pour le parrain
+      await $supabase.from('referral_rewards').insert([{
+        user_auth_id: user.id,
+        parent_auth_id: parentUser.auth_id,
+        reward_amount: 1000,
+        rewarded_at: new Date().toISOString()
+      }])
+
+      // 6️⃣ Créer la recharge de 1000 pour le parrain
+      await $supabase.from('recharges').insert([{
+        id_user: parentUser.id,
+        amount: 1000,
+        phone: parentUser.phone,
+        methode: 'Recompense', // ou autre valeur pour indiquer la source
+        reference: `reward_from_${user.id}`,
+        identifier: null,
+        created_at: new Date().toISOString()
+      }])
+    }
   },
 
   getAllGrades: async (): Promise<Grade[]> => {
