@@ -48,20 +48,21 @@ const router = useRouter()
 const currentIndex = ref(0)
 const cards = ref([
   {
-    title: "Découvrez notre nouveau café premium",
-    description: "Une expérience sensorielle unique avec des arômes riches et une texture veloutée qui éveillera vos papilles.",
-    buttonText: "Explorer maintenant"
-  },
-  {
-    title: "Offre spéciale -20% sur tous les cafés",
-    description: "Profitez de notre promotion exceptionnelle sur toute la gamme de cafés jusqu'à la fin du mois.",
-    buttonText: "Profiter de l'offre"
-  },
-  {
-    title: "Ateliers de dégustation chaque weekend",
-    description: "Rejoignez-nous pour apprendre les subtilités de la dégustation de café avec nos experts.",
-    buttonText: "Réserver une place"
-  }
+  title: "Investissez dans le recyclage avec des revenus quotidiens",
+  description: "Chaque boîte de collecte finance une équipe terrain qui récupère des déchets recyclables. Ces déchets sont ensuite revendus à l’industrie, générant des revenus transparents pour les investisseurs.",
+  buttonText: "Commencer maintenant"
+},
+{
+  title: "Des revenus calculés et sécurisés",
+  description: "Investissez dès 10 000 F CFA et recevez des gains journaliers proportionnels à votre investissement. Votre capital travaille pour vous tout en soutenant l’environnement.",
+  buttonText: "Découvrir les packs"
+},
+{
+  title: "Impact environnemental réel",
+  description: "Votre investissement contribue à réduire les déchets et à soutenir les collecteurs locaux, tout en générant un revenu stable et transparent.",
+  buttonText: "Rejoindre le projet"
+}
+
 ])
 
 const setCurrentIndex = (index) => currentIndex.value = index

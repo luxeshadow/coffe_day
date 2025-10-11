@@ -7,8 +7,8 @@
             <i class="fi fi-rr-users"></i>
           </div>
           <div class="stat-content">
-            <div class="stat-value">2K</div>
-            <div class="stat-label">Participants</div>
+            <div class="stat-value">1.2K</div>
+            <div class="stat-label">Stats</div>
           </div>
         </div>
       </div>
