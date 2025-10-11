@@ -4,7 +4,7 @@
       <div class="stat-card animate__animated animate__fadeIn">
         <div class="stat-item">
           <div class="stat-icon">
-            <i class="fi fi-rr-users"></i>
+            <i class="fi fi-rr-chat-arrow-grow"></i>
           </div>
           <div class="stat-content">
             <div class="stat-value">1.2K</div>
