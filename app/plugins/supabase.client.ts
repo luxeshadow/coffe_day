@@ -17,23 +17,21 @@ export default defineNuxtPlugin((nuxtApp) => {
   }
 
   const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey)
-
   const router = useRouter()
   const gainStore = useGainStore()
   const gradeStore = useGradeStore()
   const authStore = useAuthStore()
 
+  const publicPaths = ['/', '/register', '/login'] // Pages accessibles sans session
+
   // ✅ Écouteur global de session Supabase
   supabase.auth.onAuthStateChange((_event, session) => {
-    if (!session) {
+    if (!session && !publicPaths.includes(router.currentRoute.value.path)) {
       console.warn('⚠️ Session Supabase expirée → logout global')
-
-      // Stores setup() : utiliser clearStore ou logout personnalisés
       gainStore.clearStore()
-      gradeStore.clearStore() // si setup() store ne possède pas clearStore
+      gradeStore.clearStore()
       authStore.logout()
-
-      router.push('/')
+      router.push('/') // Redirige uniquement si pas sur une page publique
     }
   })
 
@@ -45,7 +43,9 @@ export default defineNuxtPlugin((nuxtApp) => {
       gainStore.clearStore()
       gradeStore.clearStore()
       authStore.logout()
-      router.push('/')
+      if (!publicPaths.includes(router.currentRoute.value.path)) {
+        router.push('/')
+      }
     }
     return { data, error }
   }
