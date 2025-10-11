@@ -93,23 +93,23 @@ definePageMeta({ layout: 'dashboard' })
 
 interface WithdrawlWithUser {
   id: number
-  id_user: string
   amount: number
   status: string
+  created_at: string
   user_name: string
   phone: string
   wallet: any
 }
 
 const withdrawls = ref<WithdrawlWithUser[]>([])
-const totalCount = ref(0)
 const filterStatus = ref('')
 const searchPhone = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
+const totalPages = ref(5) // provisoire le temps de compléter le COUNT
 const { $supabase } = useNuxtApp()
 
-// Modal variables
+// Modal
 const showConfirmModal = ref(false)
 const modalTitle = ref('')
 const modalText = ref('')
@@ -132,94 +132,55 @@ const confirmModal = (confirmed: boolean) => {
   modalCallback = null
 }
 
-// Fetch withdrawls
+// ------------------- FETCH WITHDRAWLS (RPC)
 const fetchWithdrawls = async () => {
   const from = (currentPage.value - 1) * pageSize.value
-  const to = currentPage.value * pageSize.value - 1
 
-  const { data: withdrawlsData, error, count } = await $supabase
-    .from('withdrawls')
-    .select('*', { count: 'exact' })
-    .order('id', { ascending: false })
-    .range(from, to)
-
-  if (error) throw error
-  totalCount.value = count || 0
-
-  const detailed = await Promise.all(withdrawlsData.map(async (w: any) => {
-    const { data: user } = await $supabase
-      .from('users')
-      .select('user_name, phone')
-      .eq('auth_id', w.id_user)
-      .single()
-    const { data: wallet } = await $supabase
-      .from('wallets')
-      .select('*')
-      .eq('id_user', w.id_user)
-      .single()
-    return { ...w, user_name: user?.user_name ?? '-', phone: user?.phone ?? '-', wallet }
-  }))
-
-  withdrawls.value = detailed.filter(w => {
-    const statusMatch = !filterStatus.value || w.status === filterStatus.value
-    const phoneMatch = !searchPhone.value || w.phone.includes(searchPhone.value)
-    return statusMatch && phoneMatch
+  const { data, error } = await $supabase.rpc('get_withdrawls_with_user', {
+    p_status: filterStatus.value || null,
+    p_phone: searchPhone.value || null,
+    p_limit: pageSize.value,
+    p_offset: from
   })
+
+  if (error) {
+    console.error('Erreur fetch:', error)
+    return
+  }
+  withdrawls.value = data || []
 }
 
-const totalPages = computed(() => Math.ceil(totalCount.value / pageSize.value))
-
-// Functions using modal
+// ------------------- ACTIONS
 const confirmPayWithdrawl = async (w: WithdrawlWithUser) => {
-  const confirmed = await openConfirmModal(
-    `Payer le retrait #${w.id} ?`,
-    `Montant : ${w.amount}`
-  )
-  if (!confirmed) return
+  const ok = await openConfirmModal(`Confirmer paiement`, `Payer ${w.amount} ?`)
+  if (!ok) return
 
-  await $supabase
-    .from('withdrawls')
-    .update({ status: 'Payé' })
-    .eq('id', w.id)
-
+  await $supabase.from('withdrawls').update({ status: 'Payé' }).eq('id', w.id)
   fetchWithdrawls()
 }
 
 const confirmCancelWithdrawl = async (w: WithdrawlWithUser) => {
-  const confirmed = await openConfirmModal(
-    `Annuler le retrait #${w.id} ?`,
-    `Montant : ${w.amount}`
-  )
-  if (!confirmed) return
+  const ok = await openConfirmModal(`Annuler retrait`, `Annuler ${w.amount} ?`)
+  if (!ok) return
 
-  await $supabase
-    .from('withdrawls')
-    .delete()
-    .eq('id', w.id)
-
-  await $supabase
-    .from('recharges')
-    .insert([{
-      id_user: w.id_user,
-      amount: w.amount,
-      phone: w.phone,
-      methode: 'Remboursement',
-      reference: `cancel_withdrawl_${w.id}`,
-      created_at: new Date().toISOString()
-    }])
+  await $supabase.from('withdrawls').delete().eq('id', w.id)
+  await $supabase.from('recharges').insert([{
+    id_user: w.id_user,
+    amount: w.amount,
+    phone: w.phone,
+    methode: 'Remboursement',
+    reference: `cancel_${w.id}`
+  }])
 
   fetchWithdrawls()
 }
 
-// Watchers
-watch([currentPage, filterStatus, searchPhone], () => {
-  fetchWithdrawls()
-})
-
-onMounted(() => {
-  fetchWithdrawls()
-})
+// Auto refresh
+watch([currentPage, filterStatus, searchPhone], () => fetchWithdrawls())
+onMounted(() => fetchWithdrawls())
 </script>
+
+
 
 <style scoped>
 .table-container { overflow-x: auto; }
