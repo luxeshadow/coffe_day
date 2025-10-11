@@ -9,7 +9,7 @@ export default defineNuxtRouteMiddleware((to) => {
 
   // Si non connecté et page privée -> redirige vers login
   if (!authStore.token && !publicRoutes.includes(to.path)) {
-    return navigateTo('/')
+    return navigateTo('/register')
   }
 
   // Si connecté
