@@ -93,6 +93,7 @@ definePageMeta({ layout: 'dashboard' })
 
 interface WithdrawlWithUser {
   id: number
+  id_user: string        // <- ajouté
   amount: number
   status: string
   created_at: string
@@ -106,7 +107,7 @@ const filterStatus = ref('')
 const searchPhone = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
-const totalPages = ref(5) // provisoire le temps de compléter le COUNT
+const totalPages = ref(5)
 const { $supabase } = useNuxtApp()
 
 // Modal
@@ -164,13 +165,18 @@ const confirmCancelWithdrawl = async (w: WithdrawlWithUser) => {
   if (!ok) return
 
   await $supabase.from('withdrawls').delete().eq('id', w.id)
-  await $supabase.from('recharges').insert([{
-    id_user: w.id_user,
-    amount: w.amount,
-    phone: w.phone,
-    methode: 'Remboursement',
-    reference: `cancel_${w.id}`
-  }])
+  // On insert avec id_user correct
+  if (w.id_user) {
+    await $supabase.from('recharges').insert([{
+      id_user: w.id_user,
+      amount: w.amount,
+      phone: w.phone,
+      methode: 'Remboursement',
+      reference: `cancel_${w.id}`
+    }])
+  } else {
+    console.warn(`Impossible de créer la recharge: id_user manquant pour le retrait ${w.id}`)
+  }
 
   fetchWithdrawls()
 }
@@ -179,6 +185,7 @@ const confirmCancelWithdrawl = async (w: WithdrawlWithUser) => {
 watch([currentPage, filterStatus, searchPhone], () => fetchWithdrawls())
 onMounted(() => fetchWithdrawls())
 </script>
+
 
 
 

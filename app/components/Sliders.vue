@@ -48,7 +48,7 @@ const router = useRouter()
 const currentIndex = ref(0)
 const cards = ref([
   {
-  title: "Recyclage avec des revenus quotidiens",
+  title: "Des revenus quotidiens",
   description: "Chaque boîte de collecte finance une équipe terrain qui récupère des déchets recyclables. Ces déchets sont ensuite revendus à l’industrie, générant des revenus transparents pour les investisseurs.",
   buttonText: "Commencer maintenant"
 },
