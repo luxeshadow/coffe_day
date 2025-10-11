@@ -5,7 +5,7 @@ export default defineNuxtRouteMiddleware((to) => {
   const authStore = useAuthStore()
   const publicRoutes = ['/', '/register']
   const adminRoutes = ['/admin']
-  
+
 
   // Si non connecté et page privée -> redirige vers login
   if (!authStore.token && !publicRoutes.includes(to.path)) {
@@ -22,7 +22,7 @@ export default defineNuxtRouteMiddleware((to) => {
     // Redirection selon rôle
     if (authStore.role === 'admin' && !to.path.startsWith('/admin')) {
       // un admin qui essaie d’aller sur /home ou autre
-      return navigateTo('/admin/user/role')
+      return navigateTo('/admin/user/stat')
     }
 
     if (authStore.role !== 'admin' && to.path.startsWith('/admin')) {
