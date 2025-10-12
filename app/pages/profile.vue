@@ -138,6 +138,13 @@
       </div>
     </div>
   </div>
+  <a
+  href="https://chat.whatsapp.com/HggCf7aAUnD0bfziuf2tOQ?mode=wwc"
+  target="_blank"
+  class="whatsapp-float"
+>
+  <img src="/img/coffee/whatsapp.png" alt="whatsapp" />
+</a>
 
   <BottomNavigation />
 </template>
@@ -190,6 +197,34 @@ onMounted(async () => {
 
 
 <style scoped>
+
+.whatsapp-float {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  background: #25d366;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 2000;
+}
+
+.whatsapp-float img {
+  width: 35px;
+  height: 35px;
+}
+
+.whatsapp-float:hover {
+  transform: scale(1.1);
+  background: #1ebe5d;
+}
+
 
 .referral-section {
   margin: 1.5rem 0;
