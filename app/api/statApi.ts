@@ -1,30 +1,30 @@
 import { useNuxtApp } from '#app'
 
 export const statApi = {
-  // ✅ Total des retraits succès
+  // ✅ Total des retraits succès pour tout le monde
   async getTotalWithdrawSuccess() {
     const { $supabase } = useNuxtApp()
     const { data, error } = await $supabase
       .from('withdrawls')
       .select('amount')
-      .eq('status', 'Payé')
+      .eq('status', 'Payé') // garde juste le filtre statut
 
     if (error) throw error
     return (data || []).reduce((sum, w) => sum + Number(w.amount), 0)
   },
 
-  // ✅ Total des recharges
+  // ✅ Total des recharges pour tout le monde
   async getTotalRecharges() {
     const { $supabase } = useNuxtApp()
     const { data, error } = await $supabase
       .from('recharges')
-      .select('amount')
+      .select('amount') // aucun filtre par user
 
     if (error) throw error
     return (data || []).reduce((sum, r) => sum + Number(r.amount), 0)
   },
 
-  // ✅ Recharges par semaine
+  // ✅ Recharges par semaine pour tout le monde
   async getWeeklyRecharges() {
     const { $supabase } = useNuxtApp()
     const { data, error } = await $supabase.rpc('recharges_per_week', {}, { head: false })
@@ -32,7 +32,7 @@ export const statApi = {
     return data || []
   },
 
-  // ✅ Retraits par semaine (correction 404)
+  // ✅ Retraits par semaine pour tout le monde
   async getWeeklyWithdraws() {
     const { $supabase } = useNuxtApp()
     const { data, error } = await $supabase.rpc('withdraws_per_week', {}, { head: false })
@@ -40,7 +40,7 @@ export const statApi = {
     return data || []
   },
 
-  // ✅ Users AVEC grade
+  // ✅ Users avec grade
   async getUsersWithGrade() {
     const { $supabase } = useNuxtApp()
     const { data, error } = await $supabase
@@ -51,7 +51,7 @@ export const statApi = {
     return (data || []).map(u => u.id_user)
   },
 
-  // ✅ Users SANS grade
+  // ✅ Users sans grade
   async getUsersWithoutGrade() {
     const { $supabase } = useNuxtApp()
 
