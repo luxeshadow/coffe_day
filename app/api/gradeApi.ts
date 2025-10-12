@@ -36,11 +36,12 @@ assignGradeToUser: async (id_grade: number) => {
   if (error) throw error
 
   // 3️⃣ Récupérer le parrain
-  const { data: parentUser } = await $supabase
-    .from('users')
-    .select('id, auth_id, phone')
-    .eq('invitecode', user.parent_invitecode)
-    .single()
+ // ✅ Correct
+const { data: parentUser } = await $supabase
+  .from('users')
+  .select('id, auth_id, phone')
+  .eq('invitecode', user.parent_invitecode) // on garde ça car parent_invitecode contient le code parent
+  .single()
 
   if (parentUser) {
     // 4️⃣ Vérifier si la reward existe déjà
