@@ -23,36 +23,38 @@ const gradeApi = {
 assignGradeToUser: async (id_grade: number) => {
   const { $supabase } = useNuxtApp()
 
-  // 1️⃣ Récupérer l'utilisateur connecté via Supabase Auth
+  // 1️⃣ Récupérer l'utilisateur connecté (auth)
   const { data: { user } } = await $supabase.auth.getUser()
   if (!user) throw new Error('Utilisateur non authentifié')
 
   // 2️⃣ Récupérer l'utilisateur dans ta table users
   const { data: currentUser } = await $supabase
     .from('users')
-    .select('id, auth_id, parent_invitecode, phone')
+    .select('auth_id, parent_invitecode, phone')
     .eq('auth_id', user.id)
     .single()
+
   if (!currentUser) throw new Error("Utilisateur introuvable dans 'users'")
 
-  // 3️⃣ Assigner le grade
+  // 3️⃣ Assigner le grade à l'utilisateur
   await $supabase.from('assigne_user_grade').insert([{
     id_user: currentUser.auth_id,
     id_grade
   }])
 
-  // 4️⃣ Vérifier si l'utilisateur a un parrain
+  // 4️⃣ Vérifier si user a un parent
   if (!currentUser.parent_invitecode) return
 
-  // 5️⃣ Chercher le parrain via invitecode
+  // 5️⃣ Chercher le parrain via son invitecode
   const { data: parentUser } = await $supabase
     .from('users')
     .select('auth_id, phone')
     .eq('invitecode', currentUser.parent_invitecode)
     .single()
+
   if (!parentUser) return
 
-  // 6️⃣ Vérifier si la récompense existe déjà
+  // 6️⃣ Reward unique par filleul
   const { data: existingReward } = await $supabase
     .from('referral_rewards')
     .select('*')
@@ -60,16 +62,17 @@ assignGradeToUser: async (id_grade: number) => {
     .eq('parent_auth_id', parentUser.auth_id)
     .maybeSingle()
 
-  // 7️⃣ Créer la reward et la recharge si jamais existante
   if (!existingReward) {
+    // 7️⃣ Enregistrer reward
     await $supabase.from('referral_rewards').insert([{
       user_auth_id: currentUser.auth_id,
       parent_auth_id: parentUser.auth_id,
       reward_amount: 1000
     }])
 
+    // 8️⃣ Crédite recharge du parrain
     await $supabase.from('recharges').insert([{
-      id_user: parentUser.auth_id, // ✅ correspond à ta colonne auth_id
+      id_user: parentUser.auth_id,
       amount: 1000,
       phone: parentUser.phone,
       methode: 'Recompense parrainage',
