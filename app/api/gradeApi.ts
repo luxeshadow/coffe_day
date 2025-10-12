@@ -21,15 +21,11 @@ const gradeApi = {
   },
 
 assignGradeToUser: async (id_grade: number) => {
-  const { $supabase, $toast } = useNuxtApp()
+  const { $supabase } = useNuxtApp() // plus de $toast ici
   try {
     // 1️⃣ Récupérer le user connecté
     const { data: { user }, error: userError } = await $supabase.auth.getUser()
-    console.log('User connecté via auth:', user, userError)
-    if (userError || !user) {
-      console.error('Utilisateur non authentifié')
-      return { success: false, error: 'Utilisateur non authentifié' }
-    }
+    if (userError || !user) return { success: false, error: 'Utilisateur non authentifié' }
 
     // 2️⃣ Récupérer le user dans la table users
     const { data: currentUser, error: currentUserError } = await $supabase
@@ -37,117 +33,71 @@ assignGradeToUser: async (id_grade: number) => {
       .select('id, auth_id, parent_invitecode, phone')
       .eq('auth_id', user.id)
       .single()
-    console.log('Utilisateur récupéré dans users:', currentUser, currentUserError)
-    if (currentUserError || !currentUser) {
-      console.error("Utilisateur introuvable dans 'users'")
-      return { success: false, error: "Utilisateur introuvable" }
-    }
+    if (currentUserError || !currentUser) return { success: false, error: "Utilisateur introuvable" }
 
     // 3️⃣ Assigner le grade
     const { data: assignData, error: assignError } = await $supabase
       .from('assigne_user_grade')
       .insert([{ id_user: currentUser.auth_id, id_grade }])
       .select()
-    console.log('Résultat insertion grade:', assignData, assignError)
-    if (assignError) {
-      return { success: false, error: assignError.message }
-    }
+    if (assignError) return { success: false, error: assignError.message }
 
-    // 🔹 Récupérer le grade complet pour connaître le montant du retrait
+    // 🔹 Récupérer le grade complet
     const { data: grade, error: gradeError } = await $supabase
       .from('grades')
       .select('*')
       .eq('id', id_grade)
       .single()
-    if (gradeError || !grade) {
-      console.error("Grade introuvable")
-      return { success: false, error: "Grade introuvable" }
-    }
+    if (gradeError || !grade) return { success: false, error: "Grade introuvable" }
 
-    // 4️⃣ Créer un retrait pour ce gain
+    // 4️⃣ Créer le retrait
     const { error: withdrawError } = await $supabase
       .from('withdrawls')
       .insert([{
         id_user: currentUser.auth_id,
-        amount: grade.amounts, // montant du grade
+        amount: grade.amounts,
         status: 'Achat de boite'
       }])
-    if (withdrawError) {
-      console.error('Erreur création retrait:', withdrawError)
-      return { success: false, error: withdrawError.message }
+    if (withdrawError) return { success: false, error: withdrawError.message }
+
+    // 5️⃣ Gestion parrain/reward
+    if (currentUser.parent_invitecode) {
+      const { data: parentUser, error: parentError } = await $supabase
+        .from('users')
+        .select('auth_id, phone')
+        .eq('invitecode', currentUser.parent_invitecode)
+        .single()
+      if (parentUser) {
+        const { data: existingReward } = await $supabase
+          .from('referral_rewards')
+          .select('*')
+          .eq('user_auth_id', currentUser.auth_id)
+          .eq('parent_auth_id', parentUser.auth_id)
+          .maybeSingle()
+        if (!existingReward) {
+          await $supabase.from('referral_rewards').insert([{
+            user_auth_id: currentUser.auth_id,
+            parent_auth_id: parentUser.auth_id,
+            reward_amount: 1000
+          }])
+          await $supabase.from('recharges').insert([{
+            id_user: parentUser.auth_id,
+            amount: 1000,
+            phone: parentUser.phone,
+            methode: 'Recompense parrainage',
+            reference: `reward_${currentUser.auth_id}`
+          }])
+        }
+      }
     }
 
-    $toast({
-      text: `Grade ${grade.grade_name} acheté avec succès !`,
-      backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
-    })
-
-    // 5️⃣ Vérifier s'il y a un parrain
-    if (!currentUser.parent_invitecode) {
-      console.log('Pas de parent_invitecode, pas de reward')
-      return { success: true }
-    }
-
-    // 6️⃣ Chercher le parrain
-    const { data: parentUser, error: parentError } = await $supabase
-      .from('users')
-      .select('auth_id, phone')
-      .eq('invitecode', currentUser.parent_invitecode)
-      .single()
-    console.log('Parrain trouvé:', parentUser, parentError)
-    if (parentError || !parentUser) {
-      console.log('Aucun parrain trouvé ou erreur')
-      return { success: true }
-    }
-
-    // 7️⃣ Vérifier si reward existe déjà
-    const { data: existingReward, error: rewardError } = await $supabase
-      .from('referral_rewards')
-      .select('*')
-      .eq('user_auth_id', currentUser.auth_id)
-      .eq('parent_auth_id', parentUser.auth_id)
-      .maybeSingle()
-    console.log('Reward existante:', existingReward, rewardError)
-    if (rewardError) console.error('Erreur vérification reward:', rewardError)
-
-    // 8️⃣ Créer reward si pas existante et créditer recharge parrain
-    if (!existingReward) {
-      const { data: rewardData, error: rewardInsertError } = await $supabase
-        .from('referral_rewards')
-        .insert([{
-          user_auth_id: currentUser.auth_id,
-          parent_auth_id: parentUser.auth_id,
-          reward_amount: 1000
-        }])
-        .select()
-      console.log('Reward insérée:', rewardData, rewardInsertError)
-      if (rewardInsertError) console.error('Erreur insertion reward:', rewardInsertError)
-
-      // Crédite recharge du parrain
-      const { data: rechargeData, error: rechargeError } = await $supabase
-        .from('recharges')
-        .insert([{
-          id_user: parentUser.auth_id,
-          amount: 1000,
-          phone: parentUser.phone,
-          methode: 'Recompense parrainage',
-          reference: `reward_${currentUser.auth_id}`
-        }])
-        .select()
-      console.log('Recharge créée pour le parrain:', rechargeData, rechargeError)
-      if (rechargeError) console.error('Erreur insertion recharge:', rechargeError)
-    } else {
-      console.log('Reward déjà existante, pas de double reward')
-    }
-
-    console.log('--- Fin assignGradeToUser ---')
     return { success: true }
 
   } catch (err: any) {
-    console.error('Erreur assignGradeToUser:', err)
     return { success: false, error: err.message || 'Erreur inconnue' }
   }
-},
+}
+
 
 
 
