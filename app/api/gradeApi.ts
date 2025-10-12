@@ -20,6 +20,7 @@ const gradeApi = {
     return data
   },
 
+// <-- ici tu fermes assignGradeToUser avec une virgule
 assignGradeToUser: async (id_grade: number) => {
   const { $supabase } = useNuxtApp()
 
@@ -27,53 +28,52 @@ assignGradeToUser: async (id_grade: number) => {
   const { data: { user }, error: userError } = await $supabase.auth.getUser()
   if (userError || !user) throw new Error('Utilisateur non authentifié')
 
-  // 2️⃣ Assigner le grade
-  const { data: assignedGrade, error } = await $supabase
+  // 2️⃣ Assigner le grade à l'utilisateur
+  const { error: assignError } = await $supabase
     .from('assigne_user_grade')
     .insert([{ id_user: user.id, id_grade }])
-    .select()
+  if (assignError) throw assignError
+
+  // 3️⃣ Récompense du parrain uniquement si l'utilisateur a un parent
+  if (!user.parent_invitecode) return
+
+  // 4️⃣ Chercher le parrain via son invitecode
+  const { data: parentUser } = await $supabase
+    .from('users')
+    .select('id, auth_id, phone')
+    .eq('invitecode', user.parent_invitecode)
     .single()
-  if (error) throw error
 
-  // 3️⃣ Récupérer le parrain
- // ✅ Correct
-const { data: parentUser } = await $supabase
-  .from('users')
-  .select('id, auth_id, phone')
-  .eq('invitecode', user.parent_invitecode) // on garde ça car parent_invitecode contient le code parent
-  .single()
+  // Si aucun parrain trouvé ou si auto-parrainage → stop
+  if (!parentUser || parentUser.auth_id === user.id) return
 
-  if (parentUser) {
-    // 4️⃣ Vérifier si la reward existe déjà
-    const { data: existingReward } = await $supabase
-      .from('referral_rewards')
-      .select('*')
-      .eq('user_auth_id', user.id)
-      .eq('parent_auth_id', parentUser.auth_id)
-      .single()
+  // 5️⃣ Vérifier si la récompense n'existe pas déjà (une seule fois par filleul)
+  const { data: existingReward } = await $supabase
+    .from('referral_rewards')
+    .select('*')
+    .eq('user_auth_id', user.id)
+    .eq('parent_auth_id', parentUser.auth_id)
+    .maybeSingle()
 
-    if (!existingReward) {
-      // 5️⃣ Créer la reward pour le parrain
-      await $supabase.from('referral_rewards').insert([{
-        user_auth_id: user.id,
-        parent_auth_id: parentUser.auth_id,
-        reward_amount: 1000,
-        rewarded_at: new Date().toISOString()
-      }])
+  if (!existingReward) {
+    // 6️⃣ Créer la reward
+    await $supabase.from('referral_rewards').insert([{
+      user_auth_id: user.id,
+      parent_auth_id: parentUser.auth_id,
+      reward_amount: 1000,
+    }])
 
-      // 6️⃣ Créer la recharge de 1000 pour le parrain
-      await $supabase.from('recharges').insert([{
-        id_user: parentUser.id,
-        amount: 1000,
-        phone: parentUser.phone,
-        methode: 'Recompense',
-        reference: `reward_from_${user.id}`,
-        identifier: null,
-        created_at: new Date().toISOString()
-      }])
-    }
+    // 7️⃣ Crédite le parent (table recharges)
+    await $supabase.from('recharges').insert([{
+      id_user: parentUser.auth_id, // ✅ auth_id car table liée à auth.users
+      amount: 1000,
+      phone: parentUser.phone,
+      methode: 'Recompense de parrainage',
+      reference: `reward_from_${user.id}`,
+      identifier: null,
+    }])
   }
-}, // <-- ici tu fermes assignGradeToUser avec une virgule
+},
 
 
   getAllGrades: async (): Promise<Grade[]> => {
