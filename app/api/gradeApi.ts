@@ -96,9 +96,7 @@ assignGradeToUser: async (id_grade: number) => {
   } catch (err: any) {
     return { success: false, error: err.message || 'Erreur inconnue' }
   }
-}
-
-
+},
 
 
   getAllGrades: async (): Promise<Grade[]> => {
