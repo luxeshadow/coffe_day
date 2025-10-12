@@ -23,62 +23,99 @@ const gradeApi = {
 assignGradeToUser: async (id_grade: number) => {
   const { $supabase } = useNuxtApp()
 
-  // 1️⃣ Récupérer l'utilisateur connecté (auth)
-  const { data: { user } } = await $supabase.auth.getUser()
-  if (!user) throw new Error('Utilisateur non authentifié')
+  console.log('--- Début assignGradeToUser ---')
 
-  // 2️⃣ Récupérer l'utilisateur dans ta table users
-  const { data: currentUser } = await $supabase
+  // 1️⃣ Récupérer le user connecté
+  const { data: { user }, error: userError } = await $supabase.auth.getUser()
+  console.log('User connecté via auth:', user, userError)
+  if (userError || !user) {
+    console.error('Erreur: utilisateur non authentifié')
+    return
+  }
+
+  // 2️⃣ Récupérer le user dans ta table users
+  const { data: currentUser, error: currentUserError } = await $supabase
     .from('users')
-    .select('auth_id, parent_invitecode, phone')
+    .select('id, auth_id, parent_invitecode, phone')
     .eq('auth_id', user.id)
     .single()
+  console.log('Utilisateur récupéré dans users:', currentUser, currentUserError)
+  if (currentUserError || !currentUser) {
+    console.error("Erreur: utilisateur introuvable dans 'users'")
+    return
+  }
 
-  if (!currentUser) throw new Error("Utilisateur introuvable dans 'users'")
+  // 3️⃣ Assigner le grade
+  const { data: assignData, error: assignError } = await $supabase
+    .from('assigne_user_grade')
+    .insert([{ id_user: currentUser.auth_id, id_grade }])
+    .select()
+  console.log('Résultat insertion grade:', assignData, assignError)
+  if (assignError) {
+    console.error('Erreur assignation grade:', assignError)
+    return
+  }
 
-  // 3️⃣ Assigner le grade à l'utilisateur
-  await $supabase.from('assigne_user_grade').insert([{
-    id_user: currentUser.auth_id,
-    id_grade
-  }])
+  // 4️⃣ Vérifier si user a un parrain
+  if (!currentUser.parent_invitecode) {
+    console.log('Pas de parent_invitecode, pas de reward')
+    return
+  }
 
-  // 4️⃣ Vérifier si user a un parent
-  if (!currentUser.parent_invitecode) return
-
-  // 5️⃣ Chercher le parrain via son invitecode
-  const { data: parentUser } = await $supabase
+  // 5️⃣ Chercher le parrain
+  const { data: parentUser, error: parentError } = await $supabase
     .from('users')
     .select('auth_id, phone')
     .eq('invitecode', currentUser.parent_invitecode)
     .single()
+  console.log('Parrain trouvé:', parentUser, parentError)
+  if (!parentUser || parentError) {
+    console.log('Aucun parrain trouvé ou erreur')
+    return
+  }
 
-  if (!parentUser) return
-
-  // 6️⃣ Reward unique par filleul
-  const { data: existingReward } = await $supabase
+  // 6️⃣ Vérifier si reward existe déjà
+  const { data: existingReward, error: rewardError } = await $supabase
     .from('referral_rewards')
     .select('*')
     .eq('user_auth_id', currentUser.auth_id)
     .eq('parent_auth_id', parentUser.auth_id)
     .maybeSingle()
+  console.log('Reward existante:', existingReward, rewardError)
+  if (rewardError) {
+    console.error('Erreur vérification reward:', rewardError)
+    return
+  }
 
+  // 7️⃣ Créer reward si pas existante
   if (!existingReward) {
-    // 7️⃣ Enregistrer reward
-    await $supabase.from('referral_rewards').insert([{
-      user_auth_id: currentUser.auth_id,
-      parent_auth_id: parentUser.auth_id,
-      reward_amount: 1000
-    }])
+    const { data: rewardData, error: rewardInsertError } = await $supabase
+      .from('referral_rewards')
+      .insert([{
+        user_auth_id: currentUser.auth_id,
+        parent_auth_id: parentUser.auth_id,
+        reward_amount: 1000
+      }])
+      .select()
+    console.log('Reward insérée:', rewardData, rewardInsertError)
 
     // 8️⃣ Crédite recharge du parrain
-    await $supabase.from('recharges').insert([{
-      id_user: parentUser.auth_id,
-      amount: 1000,
-      phone: parentUser.phone,
-      methode: 'Recompense parrainage',
-      reference: `reward_${currentUser.auth_id}`
-    }])
+    const { data: rechargeData, error: rechargeError } = await $supabase
+      .from('recharges')
+      .insert([{
+        id_user: parentUser.auth_id,
+        amount: 1000,
+        phone: parentUser.phone,
+        methode: 'Recompense parrainage',
+        reference: `reward_${currentUser.auth_id}`
+      }])
+      .select()
+    console.log('Recharge créée pour le parrain:', rechargeData, rechargeError)
+  } else {
+    console.log('Reward déjà existante, pas de double reward')
   }
+
+  console.log('--- Fin assignGradeToUser ---')
 },
 
 
