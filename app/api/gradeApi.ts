@@ -44,14 +44,27 @@ assignGradeToUser: async (id_grade: number) => {
     }
 
     // 3️⃣ Assigner le grade
-    const { data: assignData, error: assignError } = await $supabase
-      .from('assigne_user_grade')
-      .insert([{ id_user: currentUser.auth_id, id_grade }])
-      .select()
-    console.log('Résultat insertion grade:', assignData, assignError)
-    if (assignError) {
-      return { success: false, error: assignError.message }
-    }
+const { data: assignData, error: assignError } = await $supabase
+  .from('assigne_user_grade')
+  .insert([{ id_user: currentUser.auth_id, id_grade }])
+  .select()
+console.log('Résultat insertion grade:', assignData, assignError)
+if (assignError) {
+  return { success: false, error: assignError.message }
+}
+
+// 3️⃣a️⃣ Créer un retrait pour le gain (achat de boite)
+const { error: withdrawError } = await $supabase
+  .from('withdrawls')
+  .insert([{
+    id_user: currentUser.auth_id,
+    amount: grade.amounts,
+    status: 'Achat de boite'
+  }])
+console.log('Retrait créé:', withdrawError)
+if (withdrawError) {
+  return { success: false, error: withdrawError.message }
+}
 
     // 4️⃣ Vérifier s'il y a un parrain
     if (!currentUser.parent_invitecode) {
