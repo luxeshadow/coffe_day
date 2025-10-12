@@ -67,13 +67,34 @@
 import { ref } from 'vue'
 import { useGradeStore } from '../stores/gradeStore'
 import { useAssigneGrade } from '../composables/useAssigneGrade'
+import gainApi from '../api/gainApi'
 
 const gradeStore = useGradeStore()
 const { assignGrade } = useAssigneGrade()
 const loadingGradesMap = ref<Set<number>>(new Set())
 const modalGrade = ref(null)
+const walletBalance = ref(0)
+
+// ✅ Charger le solde dès que le composant est monté
+onMounted(async () => {
+  const result = await gainApi.getUserGains()
+  walletBalance.value = result.walletBalance
+})
+
+const canActivate = (grade) => {
+  return walletBalance.value >= (grade.amounts ?? 0)
+}
 
 const confirmActivateGrade = (grade) => {
+  if (!canActivate(grade)) {
+    // ✅ Message d'erreur immédiat + aucun déclenchement
+    const { $toast } = useNuxtApp()
+    $toast({
+      text: 'Solde insuffisant pour activer cette boîte.',
+      backgroundColor: 'linear-gradient(to right, #ff5f6d, #ffc371)',
+    })
+    return
+  }
   modalGrade.value = grade
 }
 
@@ -83,14 +104,17 @@ const activateGrade = async (grade) => {
   loadingGradesMap.value.add(grade.id)
 
   try {
-    await assignGrade(grade)
-    // Met à jour uniquement le store de l'utilisateur pour activer le grade
-    gradeStore.userGrades.push(grade)
+    const success = await assignGrade(grade)
+    if (success) {
+      gradeStore.userGrades.push(grade)
+      walletBalance.value -= grade.amounts 
+    }
   } finally {
     loadingGradesMap.value.delete(grade.id)
   }
 }
 </script>
+
 
 
 <style scoped>
