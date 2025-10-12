@@ -200,7 +200,7 @@ onMounted(async () => {
 
 .whatsapp-float {
   position: fixed;
-  bottom: 100px;
+  bottom: 90px;
   right: 20px;
   width: 60px;
   height: 60px;
