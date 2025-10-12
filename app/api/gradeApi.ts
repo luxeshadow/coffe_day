@@ -22,8 +22,6 @@ const gradeApi = {
 
 assignGradeToUser: async (id_grade: number) => {
   const { $supabase } = useNuxtApp()
-  console.log('--- Début assignGradeToUser ---')
-
   try {
     // 1️⃣ Récupérer le user connecté
     const { data: { user }, error: userError } = await $supabase.auth.getUser()
@@ -120,7 +118,6 @@ assignGradeToUser: async (id_grade: number) => {
     return { success: false, error: err.message || 'Erreur inconnue' }
   }
 },
-
 
 
   getAllGrades: async (): Promise<Grade[]> => {
