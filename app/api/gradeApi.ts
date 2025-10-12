@@ -21,7 +21,7 @@ const gradeApi = {
   },
 
 assignGradeToUser: async (id_grade: number) => {
-  const { $supabase } = useNuxtApp()
+  const { $supabase, $toast } = useNuxtApp()
   try {
     // 1️⃣ Récupérer le user connecté
     const { data: { user }, error: userError } = await $supabase.auth.getUser()
@@ -44,35 +44,51 @@ assignGradeToUser: async (id_grade: number) => {
     }
 
     // 3️⃣ Assigner le grade
-const { data: assignData, error: assignError } = await $supabase
-  .from('assigne_user_grade')
-  .insert([{ id_user: currentUser.auth_id, id_grade }])
-  .select()
-console.log('Résultat insertion grade:', assignData, assignError)
-if (assignError) {
-  return { success: false, error: assignError.message }
-}
+    const { data: assignData, error: assignError } = await $supabase
+      .from('assigne_user_grade')
+      .insert([{ id_user: currentUser.auth_id, id_grade }])
+      .select()
+    console.log('Résultat insertion grade:', assignData, assignError)
+    if (assignError) {
+      return { success: false, error: assignError.message }
+    }
 
-// 3️⃣a️⃣ Créer un retrait pour le gain (achat de boite)
-const { error: withdrawError } = await $supabase
-  .from('withdrawls')
-  .insert([{
-    id_user: currentUser.auth_id,
-    amount: grade.amounts,
-    status: 'Achat de boite'
-  }])
-console.log('Retrait créé:', withdrawError)
-if (withdrawError) {
-  return { success: false, error: withdrawError.message }
-}
+    // 🔹 Récupérer le grade complet pour connaître le montant du retrait
+    const { data: grade, error: gradeError } = await $supabase
+      .from('grades')
+      .select('*')
+      .eq('id', id_grade)
+      .single()
+    if (gradeError || !grade) {
+      console.error("Grade introuvable")
+      return { success: false, error: "Grade introuvable" }
+    }
 
-    // 4️⃣ Vérifier s'il y a un parrain
+    // 4️⃣ Créer un retrait pour ce gain
+    const { error: withdrawError } = await $supabase
+      .from('withdrawls')
+      .insert([{
+        id_user: currentUser.auth_id,
+        amount: grade.amounts, // montant du grade
+        status: 'Achat de boite'
+      }])
+    if (withdrawError) {
+      console.error('Erreur création retrait:', withdrawError)
+      return { success: false, error: withdrawError.message }
+    }
+
+    $toast({
+      text: `Grade ${grade.grade_name} acheté avec succès !`,
+      backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)',
+    })
+
+    // 5️⃣ Vérifier s'il y a un parrain
     if (!currentUser.parent_invitecode) {
       console.log('Pas de parent_invitecode, pas de reward')
       return { success: true }
     }
 
-    // 5️⃣ Chercher le parrain
+    // 6️⃣ Chercher le parrain
     const { data: parentUser, error: parentError } = await $supabase
       .from('users')
       .select('auth_id, phone')
@@ -84,7 +100,7 @@ if (withdrawError) {
       return { success: true }
     }
 
-    // 6️⃣ Vérifier si reward existe déjà
+    // 7️⃣ Vérifier si reward existe déjà
     const { data: existingReward, error: rewardError } = await $supabase
       .from('referral_rewards')
       .select('*')
@@ -94,7 +110,7 @@ if (withdrawError) {
     console.log('Reward existante:', existingReward, rewardError)
     if (rewardError) console.error('Erreur vérification reward:', rewardError)
 
-    // 7️⃣ Créer reward si pas existante
+    // 8️⃣ Créer reward si pas existante et créditer recharge parrain
     if (!existingReward) {
       const { data: rewardData, error: rewardInsertError } = await $supabase
         .from('referral_rewards')
@@ -107,7 +123,7 @@ if (withdrawError) {
       console.log('Reward insérée:', rewardData, rewardInsertError)
       if (rewardInsertError) console.error('Erreur insertion reward:', rewardInsertError)
 
-      // 8️⃣ Crédite recharge du parrain
+      // Crédite recharge du parrain
       const { data: rechargeData, error: rechargeError } = await $supabase
         .from('recharges')
         .insert([{
@@ -126,11 +142,13 @@ if (withdrawError) {
 
     console.log('--- Fin assignGradeToUser ---')
     return { success: true }
+
   } catch (err: any) {
     console.error('Erreur assignGradeToUser:', err)
     return { success: false, error: err.message || 'Erreur inconnue' }
   }
 },
+
 
 
   getAllGrades: async (): Promise<Grade[]> => {
