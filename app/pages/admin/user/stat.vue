@@ -6,11 +6,11 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-6">
       <div class="card p-4 shadow rounded bg-white text-center">
         <h3 class="font-semibold mb-2">Total Recharges</h3>
-        <p class="text-xl font-bold text-green-600">{{ totalRecharge.toLocaleString() }} F</p>
+        <p class="text-xl font-bold text-green-600">{{ statStore.totalRecharge.toLocaleString() }} F</p>
       </div>
       <div class="card p-4 shadow rounded bg-white text-center">
         <h3 class="font-semibold mb-2">Total Retraits Success</h3>
-        <p class="text-xl font-bold text-red-600">{{ totalWithdraw.toLocaleString() }} F</p>
+        <p class="text-xl font-bold text-red-600">{{ statStore.totalWithdraw.toLocaleString() }} F</p>
       </div>
     </div>
 
@@ -30,11 +30,11 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
       <div class="card p-4 shadow rounded bg-white text-center">
         <h3 class="font-semibold mb-2">Utilisateurs avec grade</h3>
-        <p class="text-xl font-bold">{{ usersWithGrade.length }}</p>
+        <p class="text-xl font-bold">{{ statStore.usersWithGrade }}</p>
       </div>
       <div class="card p-4 shadow rounded bg-white text-center">
         <h3 class="font-semibold mb-2">Utilisateurs sans grade</h3>
-        <p class="text-xl font-bold">{{ usersWithoutGrade }}</p>
+        <p class="text-xl font-bold">{{ statStore.usersWithoutGrade }}</p>
       </div>
     </div>
   </section>
@@ -45,26 +45,11 @@ import { ref, onMounted } from 'vue'
 import { useStatStore } from '../../../stores/statStore'
 
 const statStore = useStatStore()
-
-const totalRecharge = ref(0)
-const totalWithdraw = ref(0)
-const usersWithGrade = ref<string[]>([])
-const usersWithoutGrade = ref(0)
-const usersByGrade = ref<any[]>([])
-
 const globalChartRef = ref<HTMLCanvasElement | null>(null)
 const gradeChartRef = ref<HTMLCanvasElement | null>(null)
 
 onMounted(async () => {
-  if (!statStore.totalRecharge && !statStore.totalWithdraw) {
-    await statStore.loadStats()
-  }
-
-  totalRecharge.value = statStore.totalRecharge
-  totalWithdraw.value = statStore.totalWithdraw
-  usersWithGrade.value = statStore.usersWithGrade
-  usersWithoutGrade.value = statStore.usersWithoutGrade
-  usersByGrade.value = statStore.usersByGrade
+  await statStore.loadStats()
 
   if (window.Chart) {
     renderGlobalChart()
@@ -80,15 +65,11 @@ function renderGlobalChart() {
     data: {
       labels: ['Total'],
       datasets: [
-        { label: 'Recharges', data: [totalRecharge.value], backgroundColor: '#16a34a' },
-        { label: 'Retraits Success', data: [totalWithdraw.value], backgroundColor: '#dc2626' }
+        { label: 'Recharges', data: [statStore.totalRecharge], backgroundColor: '#16a34a' },
+        { label: 'Retraits Success', data: [statStore.totalWithdraw], backgroundColor: '#dc2626' }
       ]
     },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'top' } },
-      scales: { y: { beginAtZero: true } }
-    }
+    options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
   })
 }
 
@@ -98,10 +79,10 @@ function renderGradeChart() {
   new window.Chart(gradeChartRef.value, {
     type: 'pie',
     data: {
-      labels: usersByGrade.value.map(u => u.grade_name),
+      labels: statStore.usersByGrade.map(u => u.grade_name),
       datasets: [{
         label: 'Users par grade',
-        data: usersByGrade.value.map(u => u.total),
+        data: statStore.usersByGrade.map(u => u.total),
         backgroundColor: ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#f472b6']
       }]
     },
@@ -111,6 +92,7 @@ function renderGradeChart() {
 
 definePageMeta({ layout: 'dashboard' })
 </script>
+
 
 <style scoped>
 .stat-dashboard h2 {
