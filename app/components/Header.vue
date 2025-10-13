@@ -40,25 +40,21 @@
       </div>
     </div>
 
-    <!-- Notification Modal -->
-    <div v-if="notifModalOpen" class="notif-modal">
-      <div class="notif-modal-content">
-        <div class="notif-modal-header">
-          <h3>Notifications</h3>
-          <button @click="toggleNotifModal">✖</button>
-        </div>
-       <ul>
-       <li v-for="notif in notifications" :key="notif.id">
-    {{ notif.type }}
-  </li>
-  <li v-for="notif in notifications" :key="notif.id">
-    {{ notif.texte }}
-  </li>
-  <li v-if="!(notifications.length > 0)">Aucune notification</li>
-</ul>
-
-      </div>
+   <div v-if="notifModalOpen" class="notif-modal">
+  <div class="notif-modal-content">
+    <div class="notif-modal-header">
+      <h3>Notifications</h3>
+      <button @click="toggleNotifModal">✖</button>
     </div>
+    <ul>
+      <li v-for="notif in notifications" :key="notif.id">
+        <strong>{{ notif.type }}:</strong> {{ notif.texte }}
+      </li>
+      <li v-if="notifications.length === 0">Aucune notification</li>
+    </ul>
+  </div>
+</div>
+
   </div>
 </template>
 
