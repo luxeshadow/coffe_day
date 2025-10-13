@@ -11,13 +11,22 @@ const gainApi = {
   getUserGains: async (): Promise<UserGain> => {
     const { $supabase } = useNuxtApp()
 
-    // Récupération de l'utilisateur connecté
+    // ✅ Récupération de l'utilisateur connecté
     const { data: { user }, error: userError } = await $supabase.auth.getUser()
     if (userError || !user) throw new Error('Utilisateur non authentifié')
 
-    const userId = user.id
+    // ✅ On récupère l'utilisateur dans TA table `users` pour obtenir son auth_id
+    const { data: profile, error: profileError } = await $supabase
+      .from('users')
+      .select('auth_id')
+      .eq('auth_id', user.id)
+      .single()
 
-    // Somme des recharges
+    if (profileError || !profile) throw new Error('Profil utilisateur introuvable')
+
+    const userId = profile.auth_id  // ✅ IMPORTANT
+
+    // 🔹 Somme des recharges
     const { data: rechargesData, error: rechargeError } = await $supabase
       .from('recharges')
       .select('amount')
@@ -25,7 +34,7 @@ const gainApi = {
     if (rechargeError) throw rechargeError
     const totalRecharges = rechargesData?.reduce((sum, r) => sum + Number(r.amount), 0) ?? 0
 
-    // Somme des retraits
+    // 🔹 Somme des retraits
     const { data: withdrawalsData, error: withdrawError } = await $supabase
       .from('withdrawls')
       .select('amount')
@@ -33,7 +42,7 @@ const gainApi = {
     if (withdrawError) throw withdrawError
     const totalWithdrawals = withdrawalsData?.reduce((sum, w) => sum + Number(w.amount), 0) ?? 0
 
-    // Récupération des grades assignés
+    // 🔹 Grades assignés
     const { data: userGrades, error: userGradesError } = await $supabase
       .from('assigne_user_grade')
       .select('id_grade, date_creation')
@@ -43,7 +52,6 @@ const gainApi = {
     let totalGradeGains = 0
 
     if (userGrades?.length) {
-      // Récupérer tous les ids de grade pour une seule requête
       const gradeIds = userGrades.map(g => g.id_grade)
       const { data: gradesData, error: gradesError } = await $supabase
         .from('grades')
@@ -58,9 +66,8 @@ const gainApi = {
 
       userGrades.forEach(ug => {
         const dailyIncome = gradeMap.get(ug.id_grade) ?? 0
-        const activationDate = new Date(ug.date_creation.replace(' ', 'T')) // format ISO
+        const activationDate = new Date(ug.date_creation.replace(' ', 'T'))
         const days = (today.getTime() - activationDate.getTime()) / (1000 * 60 * 60 * 24)
-
         totalGradeGains += dailyIncome * days
       })
     }
