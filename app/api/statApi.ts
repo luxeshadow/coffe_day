@@ -7,7 +7,7 @@ export const statApi = {
     const { data, error } = await $supabase
       .from('withdrawls')
       .select('amount')
-      .eq('status', 'Payé') // garde juste le filtre statut
+      .eq('status', 'Payé') // filtre uniquement par statut
 
     if (error) throw error
     return (data || []).reduce((sum, w) => sum + Number(w.amount), 0)
@@ -18,43 +18,26 @@ export const statApi = {
     const { $supabase } = useNuxtApp()
     const { data, error } = await $supabase
       .from('recharges')
-      .select('amount') // aucun filtre par user
+      .select('amount') // aucun filtre user
 
     if (error) throw error
     return (data || []).reduce((sum, r) => sum + Number(r.amount), 0)
   },
 
-  // ✅ Recharges par semaine pour tout le monde
-  async getWeeklyRecharges() {
-    const { $supabase } = useNuxtApp()
-    const { data, error } = await $supabase.rpc('recharges_per_week', {}, { head: false })
-    if (error) throw error
-    return data || []
-  },
-
-  // ✅ Retraits par semaine pour tout le monde
-  async getWeeklyWithdraws() {
-    const { $supabase } = useNuxtApp()
-    const { data, error } = await $supabase.rpc('withdraws_per_week', {}, { head: false })
-    if (error) throw error
-    return data || []
-  },
-
-  // ✅ Users avec grade
+  // ✅ Tous les users avec grade (sans filtrer sur user)
   async getUsersWithGrade() {
     const { $supabase } = useNuxtApp()
     const { data, error } = await $supabase
       .from('assigne_user_grade')
-      .select('id_user')
+      .select('id_user') // pas de eq ici
 
     if (error) throw error
     return (data || []).map(u => u.id_user)
   },
 
-  // ✅ Users sans grade
+  // ✅ Nombre de users sans grade
   async getUsersWithoutGrade() {
     const { $supabase } = useNuxtApp()
-
     const { data: users, error: userError } = await $supabase
       .from('users')
       .select('auth_id')
@@ -62,7 +45,6 @@ export const statApi = {
     if (userError) throw userError
 
     const withGradeIds = await this.getUsersWithGrade()
-
     return (users || []).filter(u => !withGradeIds.includes(u.auth_id)).length
   },
 
@@ -71,17 +53,17 @@ export const statApi = {
     const { $supabase } = useNuxtApp()
     const { data, error } = await $supabase
       .from('assigne_user_grade')
-      .select('id_grade, id_user')
+      .select('id_grade, id_user') // pas de filtre user
 
     if (error) throw error
 
-    const result: Record<number, number> = {}
+    const counts: Record<number, number> = {}
     data?.forEach((row: any) => {
-      result[row.id_grade] = (result[row.id_grade] || 0) + 1
+      counts[row.id_grade] = (counts[row.id_grade] || 0) + 1
     })
 
-    const gradeIds = Object.keys(result)
-    if (gradeIds.length === 0) return []
+    const gradeIds = Object.keys(counts)
+    if (!gradeIds.length) return []
 
     const { data: gradesData, error: gradeError } = await $supabase
       .from('grades')
@@ -92,7 +74,7 @@ export const statApi = {
 
     return gradesData.map((g: any) => ({
       grade_name: g.grade_name,
-      total: result[g.id] || 0
+      total: counts[g.id] || 0
     }))
   }
 }
