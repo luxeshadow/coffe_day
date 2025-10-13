@@ -112,72 +112,51 @@ assignGradeToUser: async (id_grade: number) => {
   },
 
   getUserGrades: async (): Promise<Grade[]> => {
-  const { $supabase } = useNuxtApp()
+    const { $supabase } = useNuxtApp()
 
-  const { data: { user }, error: userError } = await $supabase.auth.getUser()
-  if (userError || !user) throw new Error('Utilisateur non authentifié')
+    const { data: { user }, error: userError } = await $supabase.auth.getUser()
+    if (userError || !user) throw new Error('Utilisateur non authentifié')
 
-  // ✅ Récupérer auth_id dans ta table users
-  const { data: currentUser, error: profileError } = await $supabase
-    .from('users')
-    .select('auth_id')
-    .eq('auth_id', user.id)
-    .single()
+    const { data, error } = await $supabase
+      .from('assigne_user_grade')
+      .select('id_grade, grades(*)')
+      .eq('id_user', user.id)
 
-  if (profileError || !currentUser) throw new Error("Utilisateur introuvable")
+    if (error) throw error
+    if (!data) return []
 
-  const { data, error } = await $supabase
-    .from('assigne_user_grade')
-    .select('id_grade, grades(*)')
-    .eq('id_user', currentUser.auth_id) // ✅ Correction ici
+    return data.map((row: any) => row.grades) as Grade[]
+  },
 
-  if (error) throw error
-  if (!data) return []
+  getUserDailyIncomeAndTopGrade: async () => {
+    const { $supabase } = useNuxtApp()
 
-  return data.map((row: any) => row.grades) as Grade[]
-},
+    const { data: { user }, error: userError } = await $supabase.auth.getUser()
+    if (userError || !user) throw new Error('Utilisateur non authentifié')
 
-getUserDailyIncomeAndTopGrade: async () => {
-  const { $supabase } = useNuxtApp()
+    const { data: assignedGrades, error } = await $supabase
+      .from('assigne_user_grade')
+      .select('id_grade, grades(*)')
+      .eq('id_user', user.id)
 
-  const { data: { user }, error: userError } = await $supabase.auth.getUser()
-  if (userError || !user) throw new Error('Utilisateur non authentifié')
+    if (error) throw error
+    if (!assignedGrades || assignedGrades.length === 0) {
+      return { dailyIncome: 0, topGradeName: null }
+    }
 
-  // ✅ Récupérer auth_id dans ta table users
-  const { data: currentUser, error: profileError } = await $supabase
-    .from('users')
-    .select('auth_id')
-    .eq('auth_id', user.id)
-    .single()
+    const grades: Grade[] = assignedGrades.map((row: any) => row.grades)
 
-  if (profileError || !currentUser) throw new Error("Utilisateur introuvable")
+    const dailyIncome = grades.reduce((sum, g) => sum + (g.daily_income ?? 0), 0)
 
-  const { data: assignedGrades, error } = await $supabase
-    .from('assigne_user_grade')
-    .select('id_grade, grades(*)')
-    .eq('id_user', currentUser.auth_id) // ✅ Correction ici
+    const topGrade = grades.reduce((prev, curr) => {
+      return (curr.daily_income ?? 0) > (prev.daily_income ?? 0) ? curr : prev
+    }, grades[0])
 
-  if (error) throw error
-  if (!assignedGrades || assignedGrades.length === 0) {
-    return { dailyIncome: 0, topGradeName: null }
+    return {
+      dailyIncome,
+      topGradeName: topGrade.grade_name
+    }
   }
-
-  const grades: Grade[] = assignedGrades.map((row: any) => row.grades)
-
-  const dailyIncome = grades.reduce((sum, g) => sum + (g.daily_income ?? 0), 0)
-
-  const topGrade = grades.reduce((prev, curr) => {
-    return (curr.daily_income ?? 0) > (prev.daily_income ?? 0) ? curr : prev
-  }, grades[0])
-
-  return {
-    dailyIncome,
-    topGradeName: topGrade.grade_name
-  }
-},
-
-
- 
 }
 
 export default gradeApi
