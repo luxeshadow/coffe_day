@@ -49,11 +49,17 @@ const globalChartRef = ref<HTMLCanvasElement | null>(null)
 const gradeChartRef = ref<HTMLCanvasElement | null>(null)
 
 onMounted(async () => {
-  console.log('📊 Chargement des stats...')
-  await statStore.loadStats()
-  console.log('✅ Stats chargées : ', statStore.totalRecharge)
-  renderGlobalChart()
-  renderGradeChart()
+  try {
+    console.log('📊 Début chargement stats...')
+    await statStore.loadStats()
+    console.log('✅ Stats chargées : ', statStore.totalRecharge)
+
+    renderGlobalChart()
+    renderGradeChart()
+
+  } catch (error) {
+    console.error('❌ Erreur dans la page stats : ', error)
+  }
 })
 
 
