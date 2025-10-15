@@ -40,20 +40,20 @@
       </div>
     </div>
 
-   <div v-if="notifModalOpen" class="notif-modal">
-  <div class="notif-modal-content">
-    <div class="notif-modal-header">
-      <h3>Notifications</h3>
-      <button @click="toggleNotifModal">✖</button>
+    <div v-if="notifModalOpen" class="notif-modal">
+      <div class="notif-modal-content">
+        <div class="notif-modal-header">
+          <h3>Notifications</h3>
+          <button @click="toggleNotifModal">✖</button>
+        </div>
+        <ul>
+          <li v-for="notif in notifications" :key="notif.id">
+            <strong>{{ notif.type }}:</strong> {{ notif.texte }}
+          </li>
+          <li v-if="notifications.length === 0">Aucune notification</li>
+        </ul>
+      </div>
     </div>
-    <ul>
-      <li v-for="notif in notifications" :key="notif.id">
-        <strong>{{ notif.type }}:</strong> {{ notif.texte }}
-      </li>
-      <li v-if="notifications.length === 0">Aucune notification</li>
-    </ul>
-  </div>
-</div>
 
   </div>
 </template>
@@ -111,7 +111,10 @@ const goProfile = () => {
 
 
 <style scoped>
-.user-menu { position: relative; cursor: pointer; }
+.user-menu {
+  position: relative;
+  cursor: pointer;
+}
 
 /* --- Desktop Dropdown --- */
 .dropdown.desktop {
@@ -122,18 +125,37 @@ const goProfile = () => {
   background: white;
   color: var(--text);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   min-width: 160px;
   z-index: 200;
 }
-.dropdown.desktop ul { list-style: none; margin: 0; padding: 8px 0; }
-.dropdown.desktop li { padding: 10px 15px; cursor: pointer; transition: background 0.2s; }
-.dropdown.desktop li:hover { background: var(--cream); }
+
+.dropdown.desktop ul {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.dropdown.desktop li {
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dropdown.desktop li:hover {
+  background: var(--cream);
+}
 
 /* --- Mobile Dropdown --- */
-.dropdown.mobile { display: none; }
+.dropdown.mobile {
+  display: none;
+}
+
 @media (max-width: 768px) {
-  .dropdown.desktop { display: none; }
+  .dropdown.desktop {
+    display: none;
+  }
+
   .dropdown.mobile {
     display: block;
     position: fixed;
@@ -145,19 +167,53 @@ const goProfile = () => {
     background: white;
     color: var(--text);
     border-radius: 16px 16px 0 0;
-    box-shadow: 0 -2px 12px rgba(0,0,0,0.25);
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.25);
     z-index: 9999;
     padding-bottom: 20px;
     animation: slideUp 0.3s ease;
   }
-  .dropdown.mobile ul { list-style: none; margin: 0; padding: 10px 0; }
-  .dropdown.mobile li { padding: 12px 17px; cursor: pointer; border-bottom: 1px solid #f1f1f1; }
-  .dropdown.mobile .logout { color: #ff4d4d; font-weight: bold; }
-  .dropdown.mobile .dropdown-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 16px; border-bottom: 1px solid #eee; font-weight: bold; }
+
+  .dropdown.mobile ul {
+    list-style: none;
+    margin: 0;
+    padding: 10px 0;
+  }
+
+  .dropdown.mobile li {
+    padding: 12px 17px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f1f1;
+  }
+
+  .dropdown.mobile .logout {
+    color: #ff4d4d;
+    font-weight: bold;
+  }
+
+  .dropdown.mobile .dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 16px;
+    border-bottom: 1px solid #eee;
+    font-weight: bold;
+  }
 }
 
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-.dropdown .logout { color: #c00; font-weight: bold; }
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.dropdown .logout {
+  color: #c00;
+  font-weight: bold;
+}
 
 /* --- Notifications --- */
 .notif-badge {
@@ -177,14 +233,17 @@ const goProfile = () => {
 
 .notif-modal {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.4);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 9999;
 }
+
 .notif-modal-content {
   background: white;
   width: 90%;
@@ -193,6 +252,7 @@ const goProfile = () => {
   border-radius: 12px;
   overflow: hidden;
 }
+
 .notif-modal-header {
   display: flex;
   justify-content: space-between;
@@ -200,6 +260,7 @@ const goProfile = () => {
   padding: 12px 16px;
   border-bottom: 1px solid #eee;
 }
+
 .notif-modal-content ul {
   list-style: none;
   margin: 0;
@@ -207,6 +268,7 @@ const goProfile = () => {
   max-height: 300px;
   overflow-y: auto;
 }
+
 .notif-modal-content li {
   padding: 8px 0;
   border-bottom: 1px solid #f1f1f1;

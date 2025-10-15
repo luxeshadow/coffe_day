@@ -16,7 +16,7 @@ export const useStatStore = defineStore('stats', {
       if (this.loading) return
       this.loading = true
       try {
-        const data = await $fetch('/api/stats') // UN SEUL APPEL
+        const data = await $fetch('/api/stats') 
         if (!data.error) {
           this.totalWithdraw = data.totalWithdrawSuccess
           this.totalRecharge = data.totalRecharges
