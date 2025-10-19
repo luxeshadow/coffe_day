@@ -45,8 +45,6 @@ const toggleMask = () => {
 
 // Store Pinia
 const gainStore = useGainStore()
-
-// Formattage du montant (masque les décimales côté affichage uniquement)
 const walletBalanceFormatted = computed(() => {
   const amount = gainStore.walletBalance ?? 0
   return Math.floor(amount).toLocaleString() + ' XOF'

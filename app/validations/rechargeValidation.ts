@@ -7,8 +7,8 @@ export const rechargeValidate = (recharge: Recharge) => {
   }
 
 
-  if (!recharge.amount || recharge.amount < 1) {
-    throw new Error("Le montant minimum est de 1 XOF.")
+  if (!recharge.amount || recharge.amount < 1000) {
+    throw new Error("Le montant minimum est de 1000 XOF.")
   }
 
  

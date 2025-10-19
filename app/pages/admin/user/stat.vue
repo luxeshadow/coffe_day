@@ -48,25 +48,25 @@ const statStore = useStatStore()
 const globalChartRef = ref<HTMLCanvasElement | null>(null)
 const gradeChartRef = ref<HTMLCanvasElement | null>(null)
 
-let Chart: any // Chart.js sera chargé dynamiquement côté client
-
 onMounted(async () => {
-  // ✅ Charger Chart.js uniquement côté client
-  const chartModule = await import('chart.js/auto')
-  Chart = chartModule.default
+  try {
+    console.log('📊 Début chargement stats...')
+    await statStore.loadStats()
+    console.log('✅ Stats chargées : ', statStore.totalRecharge)
 
-  console.log('📊 Début chargement stats...')
-  await statStore.loadStats()
-  console.log('✅ Stats chargées')
+    renderGlobalChart()
+    renderGradeChart()
 
-  renderGlobalChart()
-  renderGradeChart()
+  } catch (error) {
+    console.error('❌ Erreur dans la page stats : ', error)
+  }
 })
+
 
 function renderGlobalChart() {
   if (!globalChartRef.value) return
 
-  new Chart(globalChartRef.value, {
+  new window.Chart(globalChartRef.value, {
     type: 'bar',
     data: {
       labels: ['Total'],
@@ -75,22 +75,19 @@ function renderGlobalChart() {
         { label: 'Retraits Success', data: [statStore.totalWithdraw], backgroundColor: '#dc2626' }
       ]
     },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'top' } },
-      scales: { y: { beginAtZero: true } }
-    }
+    options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
   })
 }
 
 function renderGradeChart() {
   if (!gradeChartRef.value) return
 
-  new Chart(gradeChartRef.value, {
+  new window.Chart(gradeChartRef.value, {
     type: 'pie',
     data: {
       labels: statStore.usersByGrade.map(u => u.grade_name),
       datasets: [{
+        label: 'Users par grade',
         data: statStore.usersByGrade.map(u => u.total),
         backgroundColor: ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#f472b6']
       }]
@@ -99,12 +96,8 @@ function renderGradeChart() {
   })
 }
 
-definePageMeta({
-  layout: 'dashboard',
-  ssr: false // ✅ IMPORTANT pour Vercel
-})
+definePageMeta({ layout: 'dashboard' })
 </script>
-
 
 
 <style scoped>
