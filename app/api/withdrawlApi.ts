@@ -66,7 +66,7 @@ const withdrawlApi = {
     const minWithdraw = Number(maxGrade.grades.daily_income) * 10;
     if (payload.amount < minWithdraw) {
       throw new Error(
-        `Le montant minimum pour un retrait est de ${minWithdraw}`
+        `Votre grade autorise un retrait minimum de ${minWithdraw}`
       );
     }
     // --- FIN VERIFICATION ---
