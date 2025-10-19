@@ -14,19 +14,18 @@
       </div>
     </div>
 
-    <!-- Recharges vs Retraits globaux -->
+    <!-- Graphiques -->
     <div class="mb-6 p-4 bg-white shadow rounded">
       <h3 class="font-semibold mb-4 text-center">Recharges vs Retraits globaux</h3>
       <canvas ref="globalChartRef"></canvas>
     </div>
 
-    <!-- Utilisateurs par grade -->
     <div class="mb-6 p-4 bg-white shadow rounded">
       <h3 class="font-semibold mb-4 text-center">Nombre d'utilisateurs par grade</h3>
       <canvas ref="gradeChartRef"></canvas>
     </div>
 
-    <!-- Users avec / sans grade -->
+    <!-- Utilisateurs avec/sans grade -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
       <div class="card p-4 shadow rounded bg-white text-center">
         <h3 class="font-semibold mb-2">Utilisateurs avec grade</h3>
@@ -42,30 +41,21 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useStatStore } from '../../../stores/statStore'
+import { useStatStore } from '~/stores/statStore'
 
 const statStore = useStatStore()
 const globalChartRef = ref<HTMLCanvasElement | null>(null)
 const gradeChartRef = ref<HTMLCanvasElement | null>(null)
 
 onMounted(async () => {
-  try {
-    console.log('📊 Début chargement stats...')
-    await statStore.loadStats()
-    console.log('✅ Stats chargées : ', statStore.totalRecharge)
-
-    renderGlobalChart()
-    renderGradeChart()
-
-  } catch (error) {
-    console.error('❌ Erreur dans la page stats : ', error)
-  }
+  if (!process.client) return
+  await statStore.loadStats()
+  renderGlobalChart()
+  renderGradeChart()
 })
-
 
 function renderGlobalChart() {
   if (!globalChartRef.value) return
-
   new window.Chart(globalChartRef.value, {
     type: 'bar',
     data: {
@@ -81,7 +71,6 @@ function renderGlobalChart() {
 
 function renderGradeChart() {
   if (!gradeChartRef.value) return
-
   new window.Chart(gradeChartRef.value, {
     type: 'pie',
     data: {
@@ -99,24 +88,9 @@ function renderGradeChart() {
 definePageMeta({ layout: 'dashboard' })
 </script>
 
-
 <style scoped>
-.stat-dashboard h2 {
-  color: #111827;
-  text-align: center;
-}
-
-.card {
-  border: 1px solid #e5e7eb;
-}
-
-canvas {
-  max-width: 100%;
-  height: 300px;
-}
-
-@media (max-width: 640px) {
-  .stat-dashboard h2 { font-size: 1.5rem; }
-  canvas { height: 250px; }
-}
+.stat-dashboard h2 { color: #111827; text-align: center; }
+.card { border: 1px solid #e5e7eb; }
+canvas { max-width: 100%; height: 300px; }
+@media (max-width: 640px) { .stat-dashboard h2 { font-size: 1.5rem; } canvas { height: 250px; } }
 </style>

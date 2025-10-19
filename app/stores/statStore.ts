@@ -1,4 +1,3 @@
-// stores/statStore.ts
 import { defineStore } from 'pinia'
 
 export const useStatStore = defineStore('stats', {
@@ -15,19 +14,22 @@ export const useStatStore = defineStore('stats', {
     async loadStats() {
       if (this.loading) return
       this.loading = true
+      console.log('📊 loadStats appelé') // debug
+
       try {
-        const data = await $fetch('/api/stats') 
-        if (!data.error) {
-          this.totalWithdraw = data.totalWithdrawSuccess
-          this.totalRecharge = data.totalRecharges
-          this.usersWithGrade = data.usersWithGrade
-          this.usersWithoutGrade = data.usersWithoutGrade
-          this.usersByGrade = data.usersByGrade
-        } else {
-          console.error('Erreur API stats:', data.error)
+        const { data, error } = await useFetch('/api/stats')
+        if (error.value) {
+          console.error('Erreur API stats:', error.value)
+        } else if (data.value) {
+          console.log('✅ Stats API récupérées :', data.value)
+          this.totalWithdraw = data.value.totalWithdrawSuccess || 0
+          this.totalRecharge = data.value.totalRecharges || 0
+          this.usersWithGrade = data.value.usersWithGrade || 0
+          this.usersWithoutGrade = data.value.usersWithoutGrade || 0
+          this.usersByGrade = data.value.usersByGrade || []
         }
       } catch (err) {
-        console.error('Erreur chargement stats:', err)
+        console.error('❌ Erreur chargement stats:', err)
       } finally {
         this.loading = false
       }
