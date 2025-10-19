@@ -3,11 +3,7 @@
     <div class="page-header">
       <h2>Gestion des retraits</h2>
       <div class="filters">
-        <input 
-          v-model="searchPhone" 
-          placeholder="Rechercher par numéro de téléphone" 
-          class="search-input"
-        >
+        <input v-model="searchPhone" placeholder="Rechercher par numéro de téléphone" class="search-input">
         <select v-model="filterStatus">
           <option value="">Tous</option>
           <option value="En cours...">En cours</option>
@@ -28,6 +24,7 @@
             <th>Méthode</th>
             <th>Téléphone</th>
             <th>Créé le</th>
+            <th>Fake</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -40,20 +37,17 @@
             <td>{{ w.wallet?.methode_withdrawls || '-' }}</td>
             <td>{{ w.wallet?.telephone_withdrawls || '-' }}</td>
             <td>{{ new Date(w.created_at).toLocaleString() }}</td>
-            
             <td>
-              <button 
-                v-if="w.status === 'En cours...'" 
-                @click="confirmPayWithdrawl(w)" 
-                class="pay-button"
-              >
+              <span v-if="w.fake">Oui</span>
+              <span v-else>Non</span>
+            </td>
+
+
+            <td>
+              <button v-if="w.status === 'En cours...'" @click="confirmPayWithdrawl(w)" class="pay-button">
                 Payer
               </button>
-              <button 
-                v-if="w.status === 'En cours...'" 
-                @click="confirmCancelWithdrawl(w)" 
-                class="cancel-button"
-              >
+              <button v-if="w.status === 'En cours...'" @click="confirmCancelWithdrawl(w)" class="cancel-button">
                 Annuler
               </button>
             </td>
@@ -99,6 +93,7 @@ interface WithdrawlWithUser {
   created_at: string
   user_name: string
   phone: string
+  fake: boolean
   wallet: any
 }
 
@@ -197,19 +192,87 @@ onMounted(() => fetchWithdrawls())
 
 
 <style scoped>
-.table-container { overflow-x: auto; }
-.withdrawls-table { width: 100%; border-collapse: collapse; }
-.withdrawls-table th, .withdrawls-table td { padding: 10px; border: 1px solid #ddd; }
-.withdrawls-table th { background-color: #f5f5f5; }
-.withdrawls-table tr:hover { background-color: #f0f0f0; }
-.filters { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
-.search-input { padding: 5px; border: 1px solid #ddd; border-radius: 4px; }
-.pay-button { padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; background-color: #4CAF50; color: white; margin-right: 5px; }
-.cancel-button { padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; background-color: #e53935; color: white; }
-.empty-state { text-align: center; padding: 20px; color: #999; }
-.pagination { margin-top: 20px; display: flex; gap: 10px; align-items: center; justify-content: center; }
-.pagination button { padding: 5px 10px; border: 1px solid #ddd; border-radius: 4px; background-color: #fff; cursor: pointer; }
-.pagination button:disabled { background-color: #f5f5f5; cursor: not-allowed; }
+.table-container {
+  overflow-x: auto;
+}
+
+.withdrawls-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.withdrawls-table th,
+.withdrawls-table td {
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+.withdrawls-table th {
+  background-color: #f5f5f5;
+}
+
+.withdrawls-table tr:hover {
+  background-color: #f0f0f0;
+}
+
+.filters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.search-input {
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.pay-button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #4CAF50;
+  color: white;
+  margin-right: 5px;
+}
+
+.cancel-button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #e53935;
+  color: white;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+}
+
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination button {
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
 
 /* Modal styles */
 .modal-backdrop {
@@ -218,7 +281,7 @@ onMounted(() => fetchWithdrawls())
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -231,7 +294,7 @@ onMounted(() => fetchWithdrawls())
   border-radius: 10px;
   width: 300px;
   text-align: center;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .modal-actions {
