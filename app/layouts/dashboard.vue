@@ -84,14 +84,15 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AuthService from '~/services/authService'
 import { useStatStore } from '~/stores/statStore'
-const statStore = useStatStore()
+import { useUserStore } from '~/stores/userStore' // ✅ Ajouté
 
+const statStore = useStatStore()
+const userStore = useUserStore() // ✅ Ajouté
 
 const isSidebarOpen = ref(false)
 const openDropdown = ref(null)
@@ -103,47 +104,52 @@ const toggleSidebar = () => (isSidebarOpen.value = !isSidebarOpen.value)
 const closeSidebar = () => (isSidebarOpen.value = false)
 const closeSidebarOnMobile = () => { if (window.innerWidth < 768) closeSidebar() }
 
-// ✅ Nouveau logout propre
+// ✅ Logout propre + reset stores
 const logout = async () => {
   try {
     await AuthService.logout?.().catch(() => { })
-     statStore.$reset()
-    // On vide le localStorage
+
+    // ✅ On vide les stores
+    statStore.$reset()
+    userStore.$reset() // ✅ Vidage userStore
+
+    // ✅ On nettoie le stockage
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     sessionStorage.clear()
 
-    // Ferme le dropdown
+    // Fermeture des menus et redirection
     openDropdown.value = null
-
-    // Redirection login
     router.push('/')
+
   } catch (e) {
     console.error('Erreur logout:', e)
   }
 }
 
-// Gestion clic extérieur
+// Gestion clic extérieur pour fermer dropdown
 const handleClickOutside = (event) => {
   const sidebarDropdowns = ['submenu', 'dropdown-trigger', 'user-menu']
   const clickedInside = sidebarDropdowns.some(cls => event.target.closest(`.${cls}`))
   if (!clickedInside) openDropdown.value = null
 }
 
-// Backdrop
+// Backdrop responsive
 const backdropClasses = ref('')
 watch(isSidebarOpen, (val) => {
   backdropClasses.value = val ? 'backdrop-visible' : ''
 })
 
-onMounted(() => document.addEventListener('click', handleClickOutside))
-onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 onMounted(() => {
   statStore.loadStats()
   document.addEventListener('click', handleClickOutside)
 })
 
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
+
 
 
 
