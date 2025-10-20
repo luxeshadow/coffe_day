@@ -88,7 +88,10 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import AuthService from '~/services/authService' // adapte le chemin si besoin
+import AuthService from '~/services/authService'
+import { useStatStore } from '~/stores/statStore'
+const statStore = useStatStore()
+
 
 const isSidebarOpen = ref(false)
 const openDropdown = ref(null)
@@ -103,9 +106,8 @@ const closeSidebarOnMobile = () => { if (window.innerWidth < 768) closeSidebar()
 // ✅ Nouveau logout propre
 const logout = async () => {
   try {
-    // Déconnexion backend si API disponible
     await AuthService.logout?.().catch(() => { })
-
+     statStore.$reset()
     // On vide le localStorage
     localStorage.removeItem('token')
     localStorage.removeItem('user')
@@ -136,6 +138,11 @@ watch(isSidebarOpen, (val) => {
 
 onMounted(() => document.addEventListener('click', handleClickOutside))
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
+onMounted(() => {
+  statStore.loadStats()
+  document.addEventListener('click', handleClickOutside)
+})
+
 </script>
 
 

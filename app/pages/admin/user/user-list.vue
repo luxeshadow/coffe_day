@@ -13,8 +13,8 @@
 
     <!-- ✅ Table responsive -->
     <div class="table-container">
-      <div v-if="loading" class="loading">Chargement...</div>
-      <div v-else-if="error" class="error">Erreur: {{ error }}</div>
+      <div v-if="userStore.loading" class="loading">Chargement...</div>
+      <div v-else-if="userStore.error" class="error">Erreur: {{ userStore.error }}</div>
 
       <table v-else-if="filteredUsers.length" class="roles-table">
         <thead>
@@ -31,17 +31,15 @@
             <td>{{ user.user_name || '—' }}</td>
             <td>{{ user.phone }}</td>
             <td>
-              <span
-                v-for="g in user.grades"
-                :key="g.id_grade"
-                class="permission-badge"
-              >
+              <span v-for="g in user.grades" :key="g.id_grade" class="permission-badge">
                 {{ g.grade?.grade_name }} ({{ g.grade?.daily_income }}/j)
               </span>
             </td>
-            <td> <ul>
+            <td>
+              <ul>
                 <li v-for="c in user.children" :key="c.id">{{ c.user_name }}</li>
-              </ul></td>
+              </ul>
+            </td>
             <td>
               <span class="status-badge active">
                 {{ user.walletBalance.toFixed(2) }} F
@@ -55,6 +53,13 @@
         <i class="fas fa-user-slash"></i>
         <p>Aucun utilisateur trouvé...</p>
       </div>
+    </div>
+
+    <!-- ✅ Pagination -->
+    <div class="pagination" v-if="userStore.total > userStore.limit">
+      <button :disabled="userStore.page === 1" @click="prevPage">« Précédent</button>
+      <span>Page {{ userStore.page }} / {{ totalPages }}</span>
+      <button :disabled="userStore.page === totalPages" @click="nextPage">Suivant »</button>
     </div>
   </section>
 </template>
@@ -78,13 +83,49 @@ const filteredUsers = computed(() => {
   )
 })
 
+const totalPages = computed(() =>
+  Math.ceil(userStore.total / userStore.limit)
+)
+
+function prevPage() {
+  if (userStore.page > 1) {
+    userStore.loadUsers(userStore.page - 1, userStore.limit)
+  }
+}
+
+function nextPage() {
+  if (userStore.page < totalPages.value) {
+    userStore.loadUsers(userStore.page + 1, userStore.limit)
+  }
+}
+
 onMounted(() => {
   if (!userStore.users.length) userStore.loadUsers()
 })
 </script>
 
-
 <style scoped>
+.pagination {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.pagination button {
+  padding: 6px 12px;
+  cursor: pointer;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  transition: 0.3s;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .user-list {
   max-width: 1150px;
   margin: 0 auto;

@@ -25,23 +25,27 @@ export default defineEventHandler(async () => {
     if (withdrawsError) throw withdrawsError
     const totalWithdrawSuccess = withdrawsData.reduce((sum, w: any) => sum + Number(w.amount), 0)
 
-    // 🔹 Users avec et sans grade
+    // 🔹 Users avec grade ( EXCLURE fake )
     const { data: userGradesData = [], error: userGradesError } = await supabaseAdmin
       .from('assigne_user_grade')
-      .select('id_user')
+      .select('id_user, users!inner(fake)')
+      .eq('users.fake', false) // <-- exclure fake users
     if (userGradesError) throw userGradesError
     const usersWithGrade = userGradesData.map((u: any) => u.id_user)
 
+    // 🔹 Users sans grade ( EXCLURE fake )
     const { data: usersData = [], error: usersError } = await supabaseAdmin
       .from('users')
       .select('auth_id')
+      .eq('fake', false) // <-- exclure fake
     if (usersError) throw usersError
     const usersWithoutGrade = usersData.filter((u: any) => !usersWithGrade.includes(u.auth_id)).length
 
-    // 🔹 Users par grade
+    // 🔹 Users par grade ( EXCLURE fake )
     const { data: assigneGrades = [], error: assigneError } = await supabaseAdmin
       .from('assigne_user_grade')
-      .select('id_grade, id_user')
+      .select('id_grade, id_user, users!inner(fake)')
+      .eq('users.fake', false)  // <-- exclure fake
     if (assigneError) throw assigneError
 
     const gradeCountMap: Record<number, number> = {}

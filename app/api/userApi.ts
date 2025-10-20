@@ -30,86 +30,95 @@ interface User {
 const userApi = () => {
   const { $supabase } = useNuxtApp()
 
-  const getUsers = async (): Promise<User[]> => {
-    const { data: usersData, error: usersError } = await $supabase
+  const getUsers = async (page = 1, limit = 10) => {
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+
+    // ✅ 1. Charger les users (avec count )
+    const { data: usersData, error: usersError, count } = await $supabase
       .from('users')
-      .select('*')
+      .select('*', { count: 'exact' })
+      .range(from, to)
+
     if (usersError) throw usersError
-    if (!usersData) return []
+    if (!usersData) return { users: [], total: 0 }
 
-    const users: User[] = []
+    const authIds = usersData.map(u => u.auth_id)
 
-    for (const u of usersData) {
-      // Grades
-      const { data: userGrades, error: userGradesError } = await $supabase
-        .from('assigne_user_grade')
-        .select('id_grade, date_creation')
-        .eq('id_user', u.auth_id)
-      if (userGradesError) throw userGradesError
+    // ✅ 2. Charger tous les grades d’un coup
+    const { data: allUserGrades = [] } = await $supabase
+      .from('assigne_user_grade')
+      .select('id_user, id_grade, date_creation')
+      .in('id_user', authIds)
 
-      let gradesWithInfo: UserGrade[] = []
-      if (userGrades?.length) {
-        const gradeIds = userGrades.map(g => g.id_grade)
-        const { data: gradesData, error: gradesError } = await $supabase
-          .from('grades')
-          .select('id, grade_name, daily_income')
-          .in('id', gradeIds)
-        if (gradesError) throw gradesError
+    const gradeIds = [...new Set(allUserGrades.map(g => g.id_grade))]
+    const { data: gradesData = [] } = await $supabase
+      .from('grades')
+      .select('id, grade_name, daily_income')
+      .in('id', gradeIds)
 
-        const gradeMap = new Map<number, { grade_name: string, daily_income: number }>()
-        gradesData.forEach(g => gradeMap.set(g.id, { grade_name: g.grade_name, daily_income: Number(g.daily_income) }))
+    const gradeMap = new Map(gradesData.map(g => [g.id, g]))
 
-        gradesWithInfo = userGrades.map(ug => ({
-          ...ug,
-          grade: gradeMap.get(ug.id_grade)
-        }))
-      }
+    // ✅ 3. Récupérer les filleuls
+    const inviteCodes = usersData.map(u => u.invitecode)
+    const { data: childrenData = [] } = await $supabase
+      .from('users')
+      .select('id, user_name, phone, parent_invitecode')
+      .in('parent_invitecode', inviteCodes)
 
-      // Children / filleuls
-      const { data: childrenData, error: childrenError } = await $supabase
-        .from('users')
-        .select('id, user_name, phone')
-        .eq('parent_invitecode', u.invitecode)
-      if (childrenError) throw childrenError
+    // ✅ 4. Recharges + retraits d’un coup
+    const { data: rechargesData = [] } = await $supabase
+      .from('recharges')
+      .select('id_user, amount')
+      .in('id_user', authIds)
 
-      // Gains calculation (recharges + grades - withdrawals)
-      const { data: rechargesData } = await $supabase
-        .from('recharges')
-        .select('amount')
-        .eq('id_user', u.auth_id)
-      const totalRecharges = rechargesData?.reduce((sum, r) => sum + Number(r.amount), 0) ?? 0
+    const { data: withdrawsData = [] } = await $supabase
+      .from('withdrawls')
+      .select('id_user, amount')
+      .in('id_user', authIds)
 
-      const { data: withdrawalsData } = await $supabase
-        .from('withdrawls')
-        .select('amount')
-        .eq('id_user', u.auth_id)
-      const totalWithdrawals = withdrawalsData?.reduce((sum, w) => sum + Number(w.amount), 0) ?? 0
+    // ✅ 5. Construction finale
+    const users = usersData.map(user => {
+      const userGrades = allUserGrades.filter(g => g.id_user === user.auth_id)
+      const gradesWithInfo = userGrades.map(g => ({
+        ...g,
+        grade: gradeMap.get(g.id_grade)
+      }))
 
-      let totalGradeGains = 0
+      const userChildren = childrenData.filter(c => c.parent_invitecode === user.invitecode)
+
+      const totalRecharges = rechargesData
+        .filter(r => r.id_user === user.auth_id)
+        .reduce((s, r) => s + Number(r.amount), 0)
+
+      const totalWithdrawals = withdrawsData
+        .filter(w => w.id_user === user.auth_id)
+        .reduce((s, w) => s + Number(w.amount), 0)
+
       const today = new Date()
-      for (const ug of gradesWithInfo) {
-        const dailyIncome = ug.grade?.daily_income ?? 0
-        const activationDate = new Date(ug.date_creation.replace(' ', 'T'))
-        const days = (today.getTime() - activationDate.getTime()) / (1000 * 60 * 60 * 24)
-        totalGradeGains += dailyIncome * days
-      }
+      const totalGradeGains = gradesWithInfo.reduce((sum, g) => {
+        const d1 = new Date(g.date_creation.replace(' ', 'T'))
+        const days = (today.getTime() - d1.getTime()) / (1000 * 3600 * 24)
+        return sum + days * (g.grade?.daily_income || 0)
+      }, 0)
 
-      const walletBalance = totalRecharges + totalGradeGains - totalWithdrawals
-
-      users.push({
-        ...u,
+      return {
+        ...user,
         grades: gradesWithInfo,
-        children: childrenData ?? [],
-        walletBalance
-      })
+        children: userChildren,
+        walletBalance: totalRecharges + totalGradeGains - totalWithdrawals
+      }
+    })
+
+    return {
+      users,
+      total: count || 0,
+      page,
+      limit
     }
-
-    return users
   }
 
-  return {
-    getUsers
-  }
+  return { getUsers }
 }
 
 export default userApi
