@@ -1,3 +1,4 @@
+//api/userApi.ts
 import { useNuxtApp } from '#app'
 
 interface UserGrade {

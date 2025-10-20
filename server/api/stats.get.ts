@@ -10,48 +10,47 @@ const supabaseAdmin = createClient(
 
 export default defineEventHandler(async () => {
   try {
-    // 🔹 Total des recharges (uniquement utilisateurs réels)
+    // 🔹 Récupérer tous les vrais utilisateurs
+    const { data: usersData = [], error: usersError } = await supabaseAdmin
+      .from('users')
+      .select('id, auth_id')
+      .eq('fake', false)
+    if (usersError) throw usersError
+
+    const realUserIds = usersData.map(u => u.auth_id)
+
+    // 🔹 Total des recharges (uniquement vrais utilisateurs)
     const { data: rechargesData = [], error: rechargesError } = await supabaseAdmin
       .from('recharges')
-      .select('amount, users!inner(fake)')
-      .eq('users.fake', false)
+      .select('amount, id_user')
+      .in('id_user', realUserIds)
     if (rechargesError) throw rechargesError
+
     const totalRecharges = rechargesData.reduce((sum, r: any) => sum + Number(r.amount), 0)
 
-    // 🔹 Total des retraits payés (uniquement utilisateurs réels)
+    // 🔹 Total des retraits payés (uniquement vrais utilisateurs)
     const { data: withdrawsData = [], error: withdrawsError } = await supabaseAdmin
       .from('withdrawls')
-      .select('amount, users!inner(fake)')
+      .select('amount, id_user, status')
+      .in('id_user', realUserIds)
       .eq('status', 'Payé')
-      .eq('users.fake', false)
     if (withdrawsError) throw withdrawsError
+
     const totalWithdrawSuccess = withdrawsData.reduce((sum, w: any) => sum + Number(w.amount), 0)
 
     // 🔹 Users avec grade (EXCLURE fake)
     const { data: userGradesData = [], error: userGradesError } = await supabaseAdmin
       .from('assigne_user_grade')
-      .select('id_user, users!inner(fake)')
-      .eq('users.fake', false)
+      .select('id_user, id_grade')
+      .in('id_user', realUserIds)
     if (userGradesError) throw userGradesError
-    const usersWithGrade = userGradesData.map((u: any) => u.id_user)
 
-    // 🔹 Users sans grade (EXCLURE fake)
-    const { data: usersData = [], error: usersError } = await supabaseAdmin
-      .from('users')
-      .select('auth_id')
-      .eq('fake', false)
-    if (usersError) throw usersError
+    const usersWithGrade = userGradesData.map((u: any) => u.id_user)
     const usersWithoutGrade = usersData.filter((u: any) => !usersWithGrade.includes(u.auth_id)).length
 
-    // 🔹 Users par grade (EXCLURE fake)
-    const { data: assigneGrades = [], error: assigneError } = await supabaseAdmin
-      .from('assigne_user_grade')
-      .select('id_grade, id_user, users!inner(fake)')
-      .eq('users.fake', false)
-    if (assigneError) throw assigneError
-
+    // 🔹 Users par grade
     const gradeCountMap: Record<number, number> = {}
-    assigneGrades.forEach((row: any) => {
+    userGradesData.forEach((row: any) => {
       gradeCountMap[row.id_grade] = (gradeCountMap[row.id_grade] || 0) + 1
     })
 
