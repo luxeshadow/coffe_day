@@ -26,9 +26,9 @@
           <input type="number" id="montant" v-model="formData.amount" class="recharge-input" required
             placeholder="Entré montant à recharger" />
 
-          <!-- <div class="recharge-note">
-            <i class="fas fa-info-circle"></i> Montant minimum : 1 000 XOF
-          </div> -->
+          <div class="recharge-note">
+            <i class="fas fa-info-circle"></i> Montant minimum pour premier depot : 10000 XOF
+          </div>
         </div>
 
         <!-- Méthodes de paiement -->
