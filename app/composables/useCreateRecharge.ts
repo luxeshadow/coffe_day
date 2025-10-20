@@ -8,7 +8,7 @@ import type { Recharge } from '../models/Recharge'
 export function useRecharge() {
   const loading = ref(false)
   const error = ref<string | null>(null)
-  const countdown = ref(0)       // ← compteur exposé
+  const countdown = ref(0)
   const { $toast } = useNuxtApp()
   let timer: any = null
 
@@ -32,13 +32,24 @@ export function useRecharge() {
   }) => {
     loading.value = true
     error.value = null
-    startCountdown(30) // ← démarre le countdown ici
+    startCountdown(30)
 
     try {
+      // ✅ Validation du formulaire
       rechargeValidate({ phone, amount, methode: paymentMethod })
 
+      // ✅ Vérifier si c'est la première recharge avant PayGate
+      const existingRecharges = await rechargeService.getUserRecharges()
+      if (!existingRecharges || existingRecharges.length === 0) {
+        if (amount < 10000) {
+          throw new Error('Le premier dépôt ne peut pas être inférieur à 10 000 XOF.')
+        }
+      }
+
+      // ✅ Identifier pour PayGate
       const identifier = `TX-${Date.now()}`
 
+      // ✅ Paiement PayGate
       const paygateRes = await paygateService.createPayment({
         phone_number: phone,
         amount,
@@ -51,24 +62,38 @@ export function useRecharge() {
         throw new Error('tx_reference non reçu de PayGate')
       }
 
-      // Attente active avec countdown visible
+      // ⏳ Attente
       await new Promise(resolve => setTimeout(resolve, 30000))
 
+      // ✅ Vérifier le statut PayGate
       const statusRes = await paygateService.checkPaymentStatus(String(paygateRes.tx_reference))
       if (statusRes.status !== 0) {
         throw new Error(statusRes.message || 'Échec du paiement PayGate')
       }
 
-      const recharge: Recharge = { phone, amount, methode: paymentMethod, identifier, reference: paygateRes.tx_reference }
+      // ✅ Sauvegarde finale
+      const recharge: Recharge = {
+        phone,
+        amount,
+        methode: paymentMethod,
+        identifier,
+        reference: paygateRes.tx_reference
+      }
       const saved = await rechargeService.createRecharge(recharge)
 
-      $toast({ text: 'Recharge initiée avec succès !', backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)' })
+      $toast({
+        text: 'Recharge initiée avec succès !',
+        backgroundColor: 'linear-gradient(to right, #00b09b, #96c93d)'
+      })
 
       return saved
     } catch (err: any) {
       console.error('Erreur recharge :', err)
       error.value = err.message || 'Erreur inconnue'
-      $toast({ text: 'Erreur : ' + (err.message || 'Erreur inconnue'), backgroundColor: 'linear-gradient(to right, #ff5f6d, #ffc371)' })
+      $toast({
+        text: 'Erreur : ' + (err.message || 'Erreur inconnue'),
+        backgroundColor: 'linear-gradient(to right, #ff5f6d, #ffc371)'
+      })
       throw err
     } finally {
       loading.value = false
