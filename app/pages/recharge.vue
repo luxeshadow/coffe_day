@@ -77,7 +77,7 @@ const { loading, countdown, createRecharge } = useRecharge()
 // ✅ Données du formulaire
 const formData = reactive({
   phone: "",
-  amount: 1000,
+  amount: 10000,
   paymentMethod: "tmoney",
 })
 
