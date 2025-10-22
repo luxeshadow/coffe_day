@@ -96,7 +96,7 @@ const nextPage = () => {
     currentPage.value++
   }
 }
-
+definePageMeta({ layout: 'dashboard' })
 // 🔹 Auto-refresh sur changement de page ou recherche
 watch([currentPage, searchTerm], fetchUsers, { immediate: true })
 onMounted(fetchUsers)
