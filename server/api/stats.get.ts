@@ -68,12 +68,26 @@ export default defineEventHandler(async () => {
       }))
     }
 
+    // 🔹 Total Recompense Parrainage (uniquement vrais utilisateurs)
+    const { data: rewardsData = [], error: rewardsError } = await supabaseAdmin
+      .from('recharges')
+      .select('amount, id_user')
+      .eq('methode', 'Recompense parrainage')
+      .in('id_user', realUserIds)
+    if (rewardsError) throw rewardsError
+
+    const totalRecompenseParrainage = rewardsData.reduce(
+      (sum, r: any) => sum + Number(r.amount),
+      0
+    )
+
     return {
       totalRecharges,
       totalWithdrawSuccess,
       usersWithGrade: usersWithGrade.length,
       usersWithoutGrade,
-      usersByGrade
+      usersByGrade,
+      totalRecompenseParrainage
     }
   } catch (error: any) {
     return { error: error.message || 'Erreur inconnue' }

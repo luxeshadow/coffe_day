@@ -5,6 +5,7 @@ export const useStatStore = defineStore('stats', {
     loading: false,
     totalWithdraw: 0,
     totalRecharge: 0,
+    totalRecompenseParrainage: 0, // ✅ AJOUT ICI
     usersWithoutGrade: 0,
     usersWithGrade: 0,
     usersByGrade: [] as { grade_name: string; total: number }[]
@@ -24,6 +25,7 @@ export const useStatStore = defineStore('stats', {
           console.log('✅ Stats API récupérées :', data.value)
           this.totalWithdraw = data.value.totalWithdrawSuccess || 0
           this.totalRecharge = data.value.totalRecharges || 0
+          this.totalRecompenseParrainage = data.value.totalRecompenseParrainage || 0 
           this.usersWithGrade = data.value.usersWithGrade || 0
           this.usersWithoutGrade = data.value.usersWithoutGrade || 0
           this.usersByGrade = data.value.usersByGrade || []

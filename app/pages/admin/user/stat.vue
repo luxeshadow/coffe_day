@@ -12,6 +12,10 @@
         <h3 class="font-semibold mb-2">Total Retraits Success</h3>
         <p class="text-xl font-bold text-red-600">{{ statStore.totalWithdraw.toLocaleString() }} F</p>
       </div>
+      <div class="card p-4 shadow rounded bg-white text-center">
+    <h3 class="font-semibold mb-2">Récompense Parrainage</h3>
+    <p class="text-xl font-bold text-blue-600">{{ statStore.totalRecompenseParrainage.toLocaleString() }} F</p>
+  </div>
     </div>
 
     <!-- Graphiques -->
