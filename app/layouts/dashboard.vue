@@ -70,14 +70,11 @@
                   </a>
                 </button>
 
-
-
               </div>
             </div>
           </div>
         </div>
       </header>
-
       <main>
         <slot />
       </main>
@@ -89,10 +86,10 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AuthService from '~/services/authService'
 import { useStatStore } from '~/stores/statStore'
-import { useUserStore } from '~/stores/userStore' // ✅ Ajouté
+import { useUserStore } from '~/stores/userStore' 
 
 const statStore = useStatStore()
-const userStore = useUserStore() // ✅ Ajouté
+const userStore = useUserStore() 
 
 const isSidebarOpen = ref(false)
 const openDropdown = ref(null)

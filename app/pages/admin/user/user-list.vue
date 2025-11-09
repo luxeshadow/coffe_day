@@ -21,7 +21,8 @@
             <th>Téléphone</th>
             <th>Grades</th>
             <th>Filleuls</th>
-            <th>Wallet</th>
+            <th>Retraits Payés</th>
+            <th>Solde Wallet</th>
           </tr>
         </thead>
         <tbody>
@@ -38,6 +39,23 @@
                 <li v-for="c in u.children" :key="c.id">{{ c.user_name }}</li>
               </ul>
             </td>
+            <td>
+              <ul>
+                <li
+                  v-for="w in u.withdraws.filter(w => w.status === 'paid')"
+                  :key="w.id"
+                >
+                  {{ new Date(w.date_creation).toLocaleDateString() }} :
+                  <strong>{{ w.amount.toFixed(2) }} F</strong>
+                </li>
+              </ul>
+              <span
+                v-if="!u.withdraws.some(w => w.status === 'paid')"
+                class="no-withdraw"
+              >
+                Aucun retrait payé
+              </span>
+            </td>
             <td>{{ u.walletBalance.toFixed(2) }} F</td>
           </tr>
         </tbody>
@@ -46,8 +64,7 @@
       <div v-else class="empty-state">Aucun utilisateur trouvé...</div>
     </div>
 
-    <!-- Pagination -->
-    <div class="pagination" v-if="totalPages > 1">
+    <div class="pagination" v-if="totalPages > 1 && !searchTerm">
       <button :disabled="currentPage === 1" @click="prevPage">« Précédent</button>
       <span>Page {{ currentPage }} / {{ totalPages }}</span>
       <button :disabled="currentPage === totalPages" @click="nextPage">Suivant »</button>
@@ -65,18 +82,21 @@ const error = ref<string | null>(null)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const totalUsers = ref(0)
-const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize.value))
 const searchTerm = ref('')
+const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize.value))
 
 const fetchUsers = async () => {
   loading.value = true
   error.value = null
   try {
-    const { users: data, total } = await userApi().getUsers(currentPage.value, pageSize.value)
-    users.value = searchTerm.value
-      ? data.filter(u => u.user_name?.toLowerCase().includes(searchTerm.value.toLowerCase()) || u.phone.includes(searchTerm.value))
-      : data
-    totalUsers.value = total
+    if (searchTerm.value.trim()) {
+      users.value = await userApi().searchUsers(searchTerm.value.trim())
+      totalUsers.value = users.value.length
+    } else {
+      const { users: data, total } = await userApi().getUsers(currentPage.value, pageSize.value)
+      users.value = data
+      totalUsers.value = total
+    }
   } catch (err: any) {
     console.error(err)
     error.value = err.message || 'Erreur inconnue'
@@ -85,22 +105,20 @@ const fetchUsers = async () => {
   }
 }
 
-const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--
-  }
-}
+const prevPage = () => currentPage.value > 1 && currentPage.value--
+const nextPage = () => currentPage.value < totalPages.value && currentPage.value++
 
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++
-  }
-}
 definePageMeta({ layout: 'dashboard' })
-// 🔹 Auto-refresh sur changement de page ou recherche
 watch([currentPage, searchTerm], fetchUsers, { immediate: true })
 onMounted(fetchUsers)
 </script>
+
+<style scoped>
+.no-withdraw {
+  color: #999;
+  font-size: 0.85rem;
+}
+</style>
 
 
 <style scoped>

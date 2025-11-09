@@ -10,7 +10,7 @@ const supabaseAdmin = createClient(
 
 export default defineEventHandler(async () => {
   try {
-    // 🔹 Récupérer tous les vrais utilisateurs
+    
     const { data: usersData = [], error: usersError } = await supabaseAdmin
       .from('users')
       .select('id, auth_id')

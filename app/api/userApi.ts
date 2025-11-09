@@ -1,4 +1,3 @@
-//api/userApi.ts
 import { useNuxtApp } from '#app'
 
 interface UserGrade {
@@ -17,6 +16,14 @@ interface UserChild {
   phone: string
 }
 
+interface Withdraw {
+  id: number
+  id_user: string
+  amount: number
+  date_creation: string
+  status?: string
+}
+
 interface User {
   id: number
   user_name: string
@@ -25,28 +32,19 @@ interface User {
   parent_invitecode?: string
   grades: UserGrade[]
   children: UserChild[]
+  withdraws: Withdraw[]
   walletBalance: number
 }
 
 const userApi = () => {
   const { $supabase } = useNuxtApp()
 
-  const getUsers = async (page = 1, limit = 10) => {
-    const from = (page - 1) * limit
-    const to = from + limit - 1
-
-    // ✅ 1. Charger les users (avec count )
-    const { data: usersData, error: usersError, count } = await $supabase
-      .from('users')
-      .select('*', { count: 'exact' })
-      .range(from, to)
-
-    if (usersError) throw usersError
-    if (!usersData) return { users: [], total: 0 }
+  const buildUserData = async (usersData: any[]) => {
+    if (!usersData.length) return []
 
     const authIds = usersData.map(u => u.auth_id)
 
-    // ✅ 2. Charger tous les grades d’un coup
+    // ✅ Grades
     const { data: allUserGrades = [] } = await $supabase
       .from('assigne_user_grade')
       .select('id_user, id_grade, date_creation')
@@ -60,26 +58,28 @@ const userApi = () => {
 
     const gradeMap = new Map(gradesData.map(g => [g.id, g]))
 
-    // ✅ 3. Récupérer les filleuls
+    // ✅ Filleuls
     const inviteCodes = usersData.map(u => u.invitecode)
     const { data: childrenData = [] } = await $supabase
       .from('users')
       .select('id, user_name, phone, parent_invitecode')
       .in('parent_invitecode', inviteCodes)
 
-    // ✅ 4. Recharges + retraits d’un coup
+    // ✅ Recharges
     const { data: rechargesData = [] } = await $supabase
       .from('recharges')
       .select('id_user, amount')
       .in('id_user', authIds)
 
+    // ✅ Retraits (liste complète)
     const { data: withdrawsData = [] } = await $supabase
       .from('withdrawls')
-      .select('id_user, amount')
+      .select('id, id_user, amount, date_creation, status')
       .in('id_user', authIds)
 
-    // ✅ 5. Construction finale
-    const users = usersData.map(user => {
+    const today = new Date()
+
+    return usersData.map(user => {
       const userGrades = allUserGrades.filter(g => g.id_user === user.auth_id)
       const gradesWithInfo = userGrades.map(g => ({
         ...g,
@@ -88,15 +88,15 @@ const userApi = () => {
 
       const userChildren = childrenData.filter(c => c.parent_invitecode === user.invitecode)
 
+      const userWithdraws = withdrawsData.filter(w => w.id_user === user.auth_id)
+
       const totalRecharges = rechargesData
         .filter(r => r.id_user === user.auth_id)
         .reduce((s, r) => s + Number(r.amount), 0)
 
-      const totalWithdrawals = withdrawsData
-        .filter(w => w.id_user === user.auth_id)
+      const totalWithdrawals = userWithdraws
         .reduce((s, w) => s + Number(w.amount), 0)
 
-      const today = new Date()
       const totalGradeGains = gradesWithInfo.reduce((sum, g) => {
         const d1 = new Date(g.date_creation.replace(' ', 'T'))
         const days = (today.getTime() - d1.getTime()) / (1000 * 3600 * 24)
@@ -107,19 +107,37 @@ const userApi = () => {
         ...user,
         grades: gradesWithInfo,
         children: userChildren,
+        withdraws: userWithdraws,
         walletBalance: totalRecharges + totalGradeGains - totalWithdrawals
       }
     })
-
-    return {
-      users,
-      total: count || 0,
-      page,
-      limit
-    }
   }
 
-  return { getUsers }
+  const getUsers = async (page = 1, limit = 30) => {
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+    const { data: usersData, error, count } = await $supabase
+      .from('users')
+      .select('*', { count: 'exact' })
+      .range(from, to)
+
+    if (error) throw error
+    const users = await buildUserData(usersData || [])
+    return { users, total: count || 0, page, limit }
+  }
+
+  const searchUsers = async (term: string) => {
+    const { data, error } = await $supabase
+      .from('users')
+      .select('*')
+      .or(`user_name.ilike.%${term}%,phone.ilike.%${term}%`)
+
+    if (error) throw error
+    const users = await buildUserData(data || [])
+    return users
+  }
+
+  return { getUsers, searchUsers }
 }
 
 export default userApi

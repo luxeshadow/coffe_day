@@ -76,7 +76,7 @@ function renderGlobalChart() {
 function renderGradeChart() {
   if (!gradeChartRef.value) return
   new window.Chart(gradeChartRef.value, {
-    type: 'pie',
+    type: 'doughnut',
     data: {
       labels: statStore.usersByGrade.map(u => u.grade_name),
       datasets: [{

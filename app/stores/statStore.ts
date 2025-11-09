@@ -15,14 +15,14 @@ export const useStatStore = defineStore('stats', {
     async loadStats() {
       if (this.loading) return
       this.loading = true
-      console.log('📊 loadStats appelé') // debug
+      console.log('loadStats appelé') 
 
       try {
         const { data, error } = await useFetch('/api/stats')
         if (error.value) {
           console.error('Erreur API stats:', error.value)
         } else if (data.value) {
-          console.log('✅ Stats API récupérées :', data.value)
+          // console.log(' Stats API récupérées :', data.value)
           this.totalWithdraw = data.value.totalWithdrawSuccess || 0
           this.totalRecharge = data.value.totalRecharges || 0
           this.totalRecompenseParrainage = data.value.totalRecompenseParrainage || 0 
