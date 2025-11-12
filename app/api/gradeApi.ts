@@ -112,21 +112,22 @@ assignGradeToUser: async (id_grade: number) => {
   },
 
   getUserGrades: async (): Promise<Grade[]> => {
-    const { $supabase } = useNuxtApp()
+  const { $supabase } = useNuxtApp()
 
-    const { data: { user }, error: userError } = await $supabase.auth.getUser()
-    if (userError || !user) throw new Error('Utilisateur non authentifié')
+  const { data: { user }, error: userError } = await $supabase.auth.getUser()
+  if (userError || !user) throw new Error('Utilisateur non authentifié')
 
-    const { data, error } = await $supabase
-      .from('assigne_user_grade')
-      .select('id_grade, grades(*)')
-      .eq('id_user', user.id)
+  const { data, error } = await $supabase
+    .from('assigne_user_grade')
+    .select('id_grade, expired, grades(*)')
+    .eq('id_user', user.id)
+    .eq('expired', false) 
 
-    if (error) throw error
-    if (!data) return []
+  if (error) throw error
+  if (!data) return []
 
-    return data.map((row: any) => row.grades) as Grade[]
-  },
+  return data.map((row: any) => row.grades) as Grade[]
+},
 
   getUserDailyIncomeAndTopGrade: async () => {
     const { $supabase } = useNuxtApp()

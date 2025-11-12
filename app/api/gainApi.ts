@@ -11,58 +11,84 @@ const gainApi = {
   getUserGains: async (): Promise<UserGain> => {
     const { $supabase } = useNuxtApp()
 
-    // Récupération de l'utilisateur connecté
+    // 🔹 Utilisateur connecté
     const { data: { user }, error: userError } = await $supabase.auth.getUser()
     if (userError || !user) throw new Error('Utilisateur non authentifié')
 
     const userId = user.id
 
-    // Somme des recharges
-    const { data: rechargesData, error: rechargeError } = await $supabase
+    // 🔹 Total des recharges
+    const { data: rechargesData = [], error: rechargeError } = await $supabase
       .from('recharges')
       .select('amount')
       .eq('id_user', userId)
     if (rechargeError) throw rechargeError
-    const totalRecharges = rechargesData?.reduce((sum, r) => sum + Number(r.amount), 0) ?? 0
+    const totalRecharges = rechargesData.reduce((sum, r) => sum + Number(r.amount), 0)
 
-    // Somme des retraits
-    const { data: withdrawalsData, error: withdrawError } = await $supabase
+    // 🔹 Total des retraits
+    const { data: withdrawalsData = [], error: withdrawError } = await $supabase
       .from('withdrawls')
       .select('amount')
       .eq('id_user', userId)
     if (withdrawError) throw withdrawError
-    const totalWithdrawals = withdrawalsData?.reduce((sum, w) => sum + Number(w.amount), 0) ?? 0
+    const totalWithdrawals = withdrawalsData.reduce((sum, w) => sum + Number(w.amount), 0)
 
-    // Récupération des grades assignés
-    const { data: userGrades, error: userGradesError } = await $supabase
+    // 🔹 Grades assignés
+    const { data: userGrades = [], error: userGradesError } = await $supabase
       .from('assigne_user_grade')
-      .select('id_grade, date_creation')
+      .select('id, id_grade, expired, date_creation')
       .eq('id_user', userId)
     if (userGradesError) throw userGradesError
 
     let totalGradeGains = 0
+    const today = new Date()
 
-    if (userGrades?.length) {
-      // Récupérer tous les ids de grade pour une seule requête
+    if (userGrades.length) {
       const gradeIds = userGrades.map(g => g.id_grade)
-      const { data: gradesData, error: gradesError } = await $supabase
+      const { data: gradesData = [], error: gradesError } = await $supabase
         .from('grades')
-        .select('id, daily_income')
+        .select('id, daily_income, amounts')
         .in('id', gradeIds)
       if (gradesError) throw gradesError
 
-      const gradeMap = new Map<number, number>()
-      gradesData.forEach(g => gradeMap.set(g.id, Number(g.daily_income)))
+      const gradeMap = new Map<number, { daily_income: number; amounts: number }>()
+      gradesData.forEach(g => gradeMap.set(g.id, { daily_income: g.daily_income, amounts: g.amounts }))
 
-      const today = new Date()
+      for (const ug of userGrades) {
+        const gradeInfo = gradeMap.get(ug.id_grade)
+        if (!gradeInfo) continue
 
-      userGrades.forEach(ug => {
-        const dailyIncome = gradeMap.get(ug.id_grade) ?? 0
-        const activationDate = new Date(ug.date_creation.replace(' ', 'T')) // format ISO
-        const days = (today.getTime() - activationDate.getTime()) / (1000 * 60 * 60 * 24)
+        const activationDate = new Date(ug.date_creation.replace(' ', 'T'))
+        let daysActive = (today.getTime() - activationDate.getTime()) / (1000 * 60 * 60 * 24)
 
-        totalGradeGains += dailyIncome * days
-      })
+        // 🔹 Si plus de 20 jours, marquer comme expiré
+        if (daysActive >= 20 && !ug.expired) {
+          await $supabase
+            .from('assigne_user_grade')
+            .update({ expired: true })
+            .eq('id', ug.id)
+          daysActive = 20 // ne pas dépasser 20 jours de gain
+        }
+
+        // 🔹 Calcul du gain seulement si non expiré
+        if (!ug.expired) {
+          const gain = gradeInfo.daily_income * Math.min(daysActive, 20)
+          const plafond = gradeInfo.amounts * 1.2
+
+          if (gain >= plafond) {
+            await $supabase
+              .from('assigne_user_grade')
+              .update({ expired: true })
+              .eq('id', ug.id)
+          } else {
+            totalGradeGains += gain
+          }
+        } else {
+          // 🔹 Même expiré, afficher les gains cumulés jusqu’à expiration (20 jours max)
+          const gain = gradeInfo.daily_income * 20
+          totalGradeGains += gain
+        }
+      }
     }
 
     const walletBalance = totalRecharges + totalGradeGains - totalWithdrawals

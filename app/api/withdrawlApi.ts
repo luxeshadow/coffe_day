@@ -48,6 +48,7 @@ const withdrawlApi = {
       throw new Error("Montant supérieur au solde disponible");
 
     // --- Vérifier grade et retrait minimum ---
+    // On récupère tous les grades assignés et prend celui avec daily_income le plus élevé
     const { data: assignedGrades, error: gradesError } = await $supabase
       .from("assigne_user_grade")
       .select("id_grade, grades(daily_income)")
@@ -57,38 +58,18 @@ const withdrawlApi = {
       throw new Error("Aucun grade assigné à l’utilisateur");
     }
 
+    // Trouver le grade avec daily_income le plus élevé
     const maxGrade = assignedGrades.reduce((prev, curr) => {
       return curr.grades.daily_income > prev.grades.daily_income ? curr : prev;
     }, assignedGrades[0]);
 
-    const minWithdrawByGrade = Number(maxGrade.grades.daily_income) * 10;
-    // --- FIN vérification grade ---
-
-    // --- Vérification règle des retraits successifs ---
-    const { data: userWithdrawls, error: withdrawlsError } = await $supabase
-      .from("withdrawls")
-      .select("amount")
-      .eq("id_user", userId)
-      .order("id", { ascending: true });
-
-    if (withdrawlsError) throw withdrawlsError;
-
-    let expectedAmount: number;
-    if (!userWithdrawls || userWithdrawls.length === 0) {
-      // Premier retrait → au moins le minimum du grade
-      expectedAmount = minWithdrawByGrade;
-    } else {
-      // Retrait suivant → double du dernier retrait
-      const lastAmount = userWithdrawls[userWithdrawls.length - 1].amount;
-      expectedAmount = Math.max(lastAmount * 2, minWithdrawByGrade);
-    }
-
-    if (payload.amount !== expectedAmount) {
+    const minWithdraw = Number(maxGrade.grades.daily_income) * 10;
+    if (payload.amount < minWithdraw) {
       throw new Error(
-        `Le montant de ce retrait doit être exactement de ${expectedAmount}`
+        `Votre grade autorise un retrait minimum de ${minWithdraw}`
       );
     }
-    // --- FIN règle combinée ---
+    // --- FIN VERIFICATION ---
 
     // Créer le retrait
     const { data, error } = await $supabase

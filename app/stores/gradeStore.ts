@@ -61,9 +61,11 @@ export const useGradeStore = defineStore('gradeStore', () => {
     }
   }
 
-  const isGradeActivated = (id_grade: number) => {
-    return userGrades.value.some(g => g.id === id_grade)
-  }
+ const isGradeActivated = (id_grade: number) => {
+  // Ne considère activé que si la boîte est dans userGrades (donc non expirée)
+  return userGrades.value.some(g => g.id === id_grade)
+}
+
 
   const clearStore = () => {
     grades.value = []

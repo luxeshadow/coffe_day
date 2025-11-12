@@ -21,8 +21,8 @@
             <th>Téléphone</th>
             <th>Grades</th>
             <th>Filleuls</th>
-            <th>Retraits Payés</th>
-            <th>Solde Wallet</th>
+            <th>Retraits payés</th>
+            <th>Wallet</th>
           </tr>
         </thead>
         <tbody>
@@ -41,20 +41,11 @@
             </td>
             <td>
               <ul>
-                <li
-                  v-for="w in u.withdraws.filter(w => w.status === 'paid')"
-                  :key="w.id"
-                >
-                  {{ new Date(w.date_creation).toLocaleDateString() }} :
-                  <strong>{{ w.amount.toFixed(2) }} F</strong>
+                <li v-for="(w, index) in u.withdraws || []" :key="index">
+                  {{ Number(w.amount).toLocaleString() }} F
                 </li>
+                <li v-if="!(u.withdraws && u.withdraws.length)">—</li>
               </ul>
-              <span
-                v-if="!u.withdraws.some(w => w.status === 'paid')"
-                class="no-withdraw"
-              >
-                Aucun retrait payé
-              </span>
             </td>
             <td>{{ u.walletBalance.toFixed(2) }} F</td>
           </tr>
@@ -64,7 +55,8 @@
       <div v-else class="empty-state">Aucun utilisateur trouvé...</div>
     </div>
 
-    <div class="pagination" v-if="totalPages > 1 && !searchTerm">
+    <!-- Pagination -->
+    <div class="pagination" v-if="totalPages > 1">
       <button :disabled="currentPage === 1" @click="prevPage">« Précédent</button>
       <span>Page {{ currentPage }} / {{ totalPages }}</span>
       <button :disabled="currentPage === totalPages" @click="nextPage">Suivant »</button>
@@ -76,27 +68,43 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import userApi from '~/api/userApi'
 
-const users = ref([])
+const users = ref<any[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(30)
 const totalUsers = ref(0)
-const searchTerm = ref('')
 const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize.value))
+const searchTerm = ref('')
 
 const fetchUsers = async () => {
   loading.value = true
   error.value = null
   try {
-    if (searchTerm.value.trim()) {
-      users.value = await userApi().searchUsers(searchTerm.value.trim())
-      totalUsers.value = users.value.length
-    } else {
-      const { users: data, total } = await userApi().getUsers(currentPage.value, pageSize.value)
-      users.value = data
-      totalUsers.value = total
-    }
+    const api = userApi()
+    // 1️⃣ Récupération des utilisateurs
+    const { users: data, total } = await api.getUsers(currentPage.value, pageSize.value)
+
+    // 2️⃣ Filtrage côté recherche
+    let filteredUsers = searchTerm.value
+      ? data.filter(u =>
+          u.user_name?.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+          u.phone.includes(searchTerm.value)
+        )
+      : data
+
+    // 3️⃣ Récupération des retraits payés séparément
+    const userIds = filteredUsers.map(u => u.auth_id || u.id)
+    const withdrawalsMap = await api.getPaidWithdrawals(userIds)
+
+    // 4️⃣ Ajouter les retraits à chaque utilisateur
+    filteredUsers = filteredUsers.map(u => ({
+      ...u,
+      withdraws: withdrawalsMap[u.auth_id || u.id] || []
+    }))
+
+    users.value = filteredUsers
+    totalUsers.value = total
   } catch (err: any) {
     console.error(err)
     error.value = err.message || 'Erreur inconnue'
@@ -105,20 +113,15 @@ const fetchUsers = async () => {
   }
 }
 
-const prevPage = () => currentPage.value > 1 && currentPage.value--
-const nextPage = () => currentPage.value < totalPages.value && currentPage.value++
+const prevPage = () => { if (currentPage.value > 1) currentPage.value-- }
+const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++ }
 
 definePageMeta({ layout: 'dashboard' })
 watch([currentPage, searchTerm], fetchUsers, { immediate: true })
 onMounted(fetchUsers)
 </script>
 
-<style scoped>
-.no-withdraw {
-  color: #999;
-  font-size: 0.85rem;
-}
-</style>
+
 
 
 <style scoped>

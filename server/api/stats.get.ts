@@ -10,7 +10,7 @@ const supabaseAdmin = createClient(
 
 export default defineEventHandler(async () => {
   try {
-    
+    // 🔹 Récupérer tous les vrais utilisateurs (fake = false)
     const { data: usersData = [], error: usersError } = await supabaseAdmin
       .from('users')
       .select('id, auth_id')
@@ -19,7 +19,7 @@ export default defineEventHandler(async () => {
 
     const realUserIds = usersData.map(u => u.auth_id)
 
-    // 🔹 Total des recharges (uniquement vrais utilisateurs)
+    // 🔹 Total des recharges (vrais utilisateurs uniquement)
     const { data: rechargesData = [], error: rechargesError } = await supabaseAdmin
       .from('recharges')
       .select('amount, id_user')
@@ -28,7 +28,7 @@ export default defineEventHandler(async () => {
 
     const totalRecharges = rechargesData.reduce((sum, r: any) => sum + Number(r.amount), 0)
 
-    // 🔹 Total des retraits payés (uniquement vrais utilisateurs)
+    // 🔹 Total des retraits payés (vrais utilisateurs uniquement)
     const { data: withdrawsData = [], error: withdrawsError } = await supabaseAdmin
       .from('withdrawls')
       .select('amount, id_user, status')
@@ -38,17 +38,18 @@ export default defineEventHandler(async () => {
 
     const totalWithdrawSuccess = withdrawsData.reduce((sum, w: any) => sum + Number(w.amount), 0)
 
-    // 🔹 Users avec grade (EXCLURE fake)
+    // 🔹 Users avec grade actif (expired = false)
     const { data: userGradesData = [], error: userGradesError } = await supabaseAdmin
       .from('assigne_user_grade')
       .select('id_user, id_grade')
       .in('id_user', realUserIds)
+      .eq('expired', false) // ✅ filtrage des grades actifs
     if (userGradesError) throw userGradesError
 
     const usersWithGrade = userGradesData.map((u: any) => u.id_user)
     const usersWithoutGrade = usersData.filter((u: any) => !usersWithGrade.includes(u.auth_id)).length
 
-    // 🔹 Users par grade
+    // 🔹 Comptage par grade
     const gradeCountMap: Record<number, number> = {}
     userGradesData.forEach((row: any) => {
       gradeCountMap[row.id_grade] = (gradeCountMap[row.id_grade] || 0) + 1
@@ -68,7 +69,7 @@ export default defineEventHandler(async () => {
       }))
     }
 
-    // 🔹 Total Recompense Parrainage (uniquement vrais utilisateurs)
+    // 🔹 Total des récompenses de parrainage
     const { data: rewardsData = [], error: rewardsError } = await supabaseAdmin
       .from('recharges')
       .select('amount, id_user')

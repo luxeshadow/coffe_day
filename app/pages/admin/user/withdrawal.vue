@@ -25,6 +25,7 @@
             <th>Téléphone</th>
             <th>Créé le</th>
             <th>Fake</th>
+            <th>Retraits payés</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -41,8 +42,14 @@
               <span v-if="w.fake">Oui</span>
               <span v-else>Non</span>
             </td>
-
-
+            <td>
+              <ul v-if="w.paidWithdrawals?.length">
+                <li v-for="pw in w.paidWithdrawals" :key="pw.id">
+                  {{ pw.amount }} FCFA - {{ new Date(pw.created_at).toLocaleDateString() }}
+                </li>
+              </ul>
+              <span v-else>-</span>
+            </td>
             <td>
               <button v-if="w.status === 'En cours...'" @click="confirmPayWithdrawl(w)" class="pay-button">
                 Payer
@@ -53,7 +60,7 @@
             </td>
           </tr>
           <tr v-if="withdrawls.length === 0">
-            <td colspan="7" class="empty-state">Aucun retrait trouvé.</td>
+            <td colspan="10" class="empty-state">Aucun retrait trouvé.</td>
           </tr>
         </tbody>
       </table>
@@ -63,18 +70,6 @@
       <button :disabled="currentPage === 1" @click="currentPage--">Précédent</button>
       <span>Page {{ currentPage }} / {{ totalPages }}</span>
       <button :disabled="currentPage === totalPages" @click="currentPage++">Suivant</button>
-    </div>
-
-    <!-- Modal de confirmation -->
-    <div v-if="showConfirmModal" class="modal-backdrop">
-      <div class="modal-content">
-        <h3>{{ modalTitle }}</h3>
-        <p>{{ modalText }}</p>
-        <div class="modal-actions">
-          <button @click="confirmModal(true)" class="confirm-btn">Oui</button>
-          <button @click="confirmModal(false)" class="cancel-btn">Non</button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -95,6 +90,7 @@ interface WithdrawlWithUser {
   phone: string
   fake: boolean
   wallet: any
+  paidWithdrawals?: { id: number, amount: number, created_at: string }[]
 }
 
 const withdrawls = ref<WithdrawlWithUser[]>([])
@@ -105,27 +101,25 @@ const pageSize = ref(10)
 const totalPages = ref(5)
 const { $supabase } = useNuxtApp()
 
-// Modal
-const showConfirmModal = ref(false)
-const modalTitle = ref('')
-const modalText = ref('')
-let modalCallback: ((confirmed: boolean) => void) | null = null
+// ------------------- Récupérer tous les retraits payés d'un utilisateur
+const getPaidWithdrawals = async (userIds: string[]) => {
+  if (!userIds.length) return {}
 
-const openConfirmModal = (title: string, text: string) => {
-  modalTitle.value = title
-  modalText.value = text
-  showConfirmModal.value = true
-  return new Promise<boolean>((resolve) => {
-    modalCallback = (confirmed: boolean) => {
-      resolve(confirmed)
-      showConfirmModal.value = false
-    }
-  })
-}
+  const { data: withdrawsData = [], error } = await $supabase
+    .from('withdrawls')
+    .select('id, id_user, amount, created_at, status')
+    .in('id_user', userIds)
+    .eq('status', 'Payé')
 
-const confirmModal = (confirmed: boolean) => {
-  modalCallback?.(confirmed)
-  modalCallback = null
+  if (error) throw error
+
+  // Regrouper par utilisateur
+  const withdrawalsMap = userIds.reduce<Record<string, { id: number, amount: number, created_at: string }[]>>((acc, id) => {
+    acc[id] = withdrawsData.filter(w => w.id_user === id)
+    return acc
+  }, {})
+
+  return withdrawalsMap
 }
 
 // ------------------- FETCH WITHDRAWLS (RPC)
@@ -144,27 +138,28 @@ const fetchWithdrawls = async () => {
     return
   }
 
-  // On map pour récupérer id_user depuis le wallet
   withdrawls.value = (data || []).map((w: any) => ({
     ...w,
     id_user: w.wallet?.id_user ?? null
   }))
+
+  const userIds = withdrawls.value.map(w => w.id_user).filter(Boolean)
+  const paidWithdrawals = await getPaidWithdrawals(userIds)
+
+  // Ajouter les retraits payés à chaque utilisateur
+  withdrawls.value = withdrawls.value.map(w => ({
+    ...w,
+    paidWithdrawals: paidWithdrawals[w.id_user] || []
+  }))
 }
 
-// ------------------- ACTIONS
+// ------------------- Actions de paiement / annulation
 const confirmPayWithdrawl = async (w: WithdrawlWithUser) => {
-  const ok = await openConfirmModal(`Confirmer paiement`, `Payer ${w.amount} ?`)
-  if (!ok) return
-
   await $supabase.from('withdrawls').update({ status: 'Payé' }).eq('id', w.id)
   fetchWithdrawls()
 }
 
 const confirmCancelWithdrawl = async (w: WithdrawlWithUser) => {
-  const ok = await openConfirmModal(`Annuler retrait`, `Annuler ${w.amount} ?`)
-  if (!ok) return
-
-  // ✅ On change juste le statut au lieu de supprimer
   await $supabase.from('withdrawls').update({ status: 'Annulé' }).eq('id', w.id)
 
   if (w.id_user) {
@@ -175,8 +170,6 @@ const confirmCancelWithdrawl = async (w: WithdrawlWithUser) => {
       methode: 'Remboursement',
       reference: `cancel_${w.id}`
     }])
-  } else {
-    console.warn(`Impossible de créer la recharge: id_user manquant pour le retrait ${w.id}`)
   }
 
   fetchWithdrawls()
@@ -186,9 +179,6 @@ const confirmCancelWithdrawl = async (w: WithdrawlWithUser) => {
 watch([currentPage, filterStatus, searchPhone], () => fetchWithdrawls())
 onMounted(() => fetchWithdrawls())
 </script>
-
-
-
 
 
 <style scoped>
