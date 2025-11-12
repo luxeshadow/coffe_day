@@ -122,7 +122,7 @@ const getPaidWithdrawals = async (userIds: string[]) => {
   return withdrawalsMap
 }
 
-// ------------------- FETCH WITHDRAWLS (RPC)
+
 const fetchWithdrawls = async () => {
   const from = (currentPage.value - 1) * pageSize.value
 
