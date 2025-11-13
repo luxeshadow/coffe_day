@@ -2,12 +2,16 @@
 import { useNuxtApp } from '#app'
 
 interface UserGrade {
+  id: number
+  id_user: string
   id_grade: number
   date_creation: string
+  expired?: boolean
   grade?: {
     id: number
     grade_name: string
     daily_income: number
+    amounts: number
   }
 }
 
@@ -18,7 +22,7 @@ interface UserChild {
 }
 
 interface UserWithdraw {
-  id_user: number
+  id_user: string
   amount: number
   status: string
 }
@@ -42,6 +46,7 @@ const userApi = () => {
     const from = (page - 1) * limit
     const to = from + limit - 1
 
+    // --- 1. Utilisateurs ---
     const { data: usersData, error: usersError, count } = await $supabase
       .from('users')
       .select('*', { count: 'exact' })
@@ -52,28 +57,29 @@ const userApi = () => {
 
     const authIds = usersData.map(u => u.auth_id)
 
-    // 2. Grades
+    // --- 2. Grades assignés ---
     const { data: allUserGrades = [] } = await $supabase
       .from('assigne_user_grade')
-      .select('id_user, id_grade, date_creation')
+      .select('id, id_user, id_grade, date_creation, expired')
       .in('id_user', authIds)
 
     const gradeIds = [...new Set(allUserGrades.map(g => g.id_grade))]
+
     const { data: gradesData = [] } = await $supabase
       .from('grades')
-      .select('id, grade_name, daily_income')
+      .select('id, grade_name, daily_income, amounts')
       .in('id', gradeIds)
 
     const gradeMap = new Map(gradesData.map(g => [g.id, g]))
 
-    // 3. Filleuls
+    // --- 3. Filleuls ---
     const inviteCodes = usersData.map(u => u.invitecode)
     const { data: childrenData = [] } = await $supabase
       .from('users')
       .select('id, user_name, phone, parent_invitecode')
       .in('parent_invitecode', inviteCodes)
 
-    // 4. Recharges + retraits
+    // --- 4. Recharges et retraits ---
     const { data: rechargesData = [] } = await $supabase
       .from('recharges')
       .select('id_user, amount')
@@ -84,38 +90,74 @@ const userApi = () => {
       .select('id_user, amount')
       .in('id_user', authIds)
 
-    // 5. Construction finale
-    const users = usersData.map(user => {
-      const userGrades = allUserGrades.filter(g => g.id_user === user.auth_id)
-      const gradesWithInfo = userGrades.map(g => ({
-        ...g,
-        grade: gradeMap.get(g.id_grade)
-      }))
+    // --- 5. Construction utilisateur ---
+    const today = new Date()
 
-      const userChildren = childrenData.filter(c => c.parent_invitecode === user.invitecode)
+    const users = await Promise.all(
+      usersData.map(async user => {
+        const userGrades = allUserGrades.filter(g => g.id_user === user.auth_id)
+        const gradesWithInfo = userGrades.map(g => ({
+          ...g,
+          grade: gradeMap.get(g.id_grade)
+        }))
 
-      const totalRecharges = rechargesData
-        .filter(r => r.id_user === user.auth_id)
-        .reduce((s, r) => s + Number(r.amount), 0)
+        const userChildren = childrenData.filter(c => c.parent_invitecode === user.invitecode)
 
-      const totalWithdrawals = withdrawsData
-        .filter(w => w.id_user === user.auth_id)
-        .reduce((s, w) => s + Number(w.amount), 0)
+        const totalRecharges = rechargesData
+          .filter(r => r.id_user === user.auth_id)
+          .reduce((s, r) => s + Number(r.amount), 0)
 
-      const today = new Date()
-      const totalGradeGains = gradesWithInfo.reduce((sum, g) => {
-        const d1 = new Date(g.date_creation.replace(' ', 'T'))
-        const days = (today.getTime() - d1.getTime()) / (1000 * 3600 * 24)
-        return sum + days * (g.grade?.daily_income || 0)
-      }, 0)
+        const totalWithdrawals = withdrawsData
+          .filter(w => w.id_user === user.auth_id)
+          .reduce((s, w) => s + Number(w.amount), 0)
 
-      return {
-        ...user,
-        grades: gradesWithInfo,
-        children: userChildren,
-        walletBalance: totalRecharges + totalGradeGains - totalWithdrawals
-      }
-    })
+        // --- 🔹 Calcul des gains de grade ---
+        let totalGradeGains = 0
+
+        for (const ug of gradesWithInfo) {
+          const gradeInfo = ug.grade
+          if (!gradeInfo) continue
+
+          const activationDate = new Date(ug.date_creation.replace(' ', 'T'))
+          let daysActive = (today.getTime() - activationDate.getTime()) / (1000 * 60 * 60 * 24)
+
+          // 🔸 Si +20 jours → expire
+          if (daysActive >= 20 && !ug.expired) {
+            await $supabase
+              .from('assigne_user_grade')
+              .update({ expired: true })
+              .eq('id', ug.id)
+            daysActive = 20
+          }
+
+          const gain = gradeInfo.daily_income * Math.min(daysActive, 20)
+          const plafond = gradeInfo.amounts * 1.2
+
+          // 🔸 Expiration par plafond
+          if (gain >= plafond && !ug.expired) {
+            await $supabase
+              .from('assigne_user_grade')
+              .update({ expired: true })
+              .eq('id', ug.id)
+          }
+
+          if (ug.expired) {
+            totalGradeGains += gradeInfo.daily_income * 20 // maximum 20 jours
+          } else {
+            totalGradeGains += gain
+          }
+        }
+
+        const walletBalance = totalRecharges + totalGradeGains - totalWithdrawals
+
+        return {
+          ...user,
+          grades: gradesWithInfo,
+          children: userChildren,
+          walletBalance
+        }
+      })
+    )
 
     return {
       users,
@@ -125,8 +167,8 @@ const userApi = () => {
     }
   }
 
-  // 🔹 Nouvelle fonction pour récupérer les retraits payés par utilisateur
-  const getPaidWithdrawals = async (userIds: number[]) => {
+  // 🔹 Requêtes retraits payés
+  const getPaidWithdrawals = async (userIds: string[]) => {
     if (!userIds.length) return {}
 
     const { data: withdrawsData = [], error } = await $supabase
@@ -137,7 +179,7 @@ const userApi = () => {
 
     if (error) throw error
 
-    const withdrawalsMap = userIds.reduce<Record<number, UserWithdraw[]>>((acc, id) => {
+    const withdrawalsMap = userIds.reduce<Record<string, UserWithdraw[]>>((acc, id) => {
       acc[id] = withdrawsData.filter(w => w.id_user === id)
       return acc
     }, {})
